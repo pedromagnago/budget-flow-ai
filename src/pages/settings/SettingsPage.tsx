@@ -402,6 +402,7 @@ export default function SettingsPage() {
                     <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Papel</th>
                     <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Ativo</th>
                     <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Criado em</th>
+                    <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -409,20 +410,104 @@ export default function SettingsPage() {
                     <tr key={r.id} className="border-t">
                       <td className="py-1.5 px-3 font-mono text-[10px] truncate max-w-[200px]">{r.user_id}</td>
                       <td className="py-1.5 px-3">
-                        <Badge variant="outline" className="text-[10px]">{r.role}</Badge>
+                        <Select
+                          defaultValue={r.role}
+                          onValueChange={v => updateUserRole.mutate({ id: r.id, role: v })}
+                        >
+                          <SelectTrigger className="h-7 text-[10px] w-28"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="super_admin">Super Admin</SelectItem>
+                            <SelectItem value="supervisor">Supervisor</SelectItem>
+                            <SelectItem value="operador">Operador</SelectItem>
+                            <SelectItem value="cliente">Cliente</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
+                      <td className="py-1.5 px-3 text-center">
+                        <Switch
+                          checked={r.active ?? true}
+                          onCheckedChange={v => updateUserRole.mutate({ id: r.id, active: v })}
+                          className="scale-75"
+                        />
+                      </td>
+                      <td className="py-1.5 px-3 text-xs text-muted-foreground">{r.created_at ? formatDate(r.created_at) : '—'}</td>
                       <td className="py-1.5 px-3 text-center">
                         <span className={`inline-block h-2 w-2 rounded-full ${r.active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
                       </td>
-                      <td className="py-1.5 px-3 text-xs text-muted-foreground">{r.created_at ? formatDate(r.created_at) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <p className="text-xs text-muted-foreground">
-              Para adicionar usuários, utilize o painel de autenticação do Supabase e insira o papel na tabela <code>user_roles</code>.
-            </p>
+
+            {/* ── Invite new user form ── */}
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <UserPlus className="h-3.5 w-3.5" /> Convidar Novo Usuário
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="usuario@email.com"
+                      value={newUser.email}
+                      onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))}
+                      className="h-8 text-xs pl-8"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Senha</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Mín. 6 caracteres"
+                      value={newUser.password}
+                      onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))}
+                      className="h-8 text-xs pl-8 pr-8"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Papel</Label>
+                  <Select value={newUser.role} onValueChange={v => setNewUser(p => ({ ...p, role: v }))}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <ShieldCheck className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="operador">Operador</SelectItem>
+                      <SelectItem value="cliente">Cliente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!newUser.email || newUser.password.length < 6 || inviteUser.isPending}
+                onClick={() => {
+                  inviteUser.mutate(newUser, {
+                    onSuccess: () => setNewUser({ email: '', password: '', role: 'operador' }),
+                  });
+                }}
+              >
+                <UserPlus className="h-3.5 w-3.5 mr-2" />
+                {inviteUser.isPending ? 'Criando...' : 'Criar Usuário'}
+              </Button>
+            </div>
           </SectionCard>
         </TabsContent>
       </Tabs>
