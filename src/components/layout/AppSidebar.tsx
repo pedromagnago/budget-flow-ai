@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { title: 'Cronograma', href: '/schedule', icon: Calendar, accent: 'module-schedule' },
   { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['operador', 'supervisor', 'super_admin'], accent: 'module-simulator' },
   { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'], accent: 'module-settings' },
+  { title: 'Importação', href: '/import', icon: FileUp, roles: ['supervisor', 'super_admin'], accent: 'module-settings' },
 ];
 
 interface AppSidebarProps {

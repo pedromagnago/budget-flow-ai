@@ -34,6 +34,7 @@ const App = () => (
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/simulator" element={<Simulator />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/import" element={<ImportPage />} />
             </Route>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />
