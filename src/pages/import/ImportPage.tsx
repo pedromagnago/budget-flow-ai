@@ -181,15 +181,15 @@ function BudgetImportSection() {
 
           {/* Row-level warnings */}
           {rowErrors.length > 0 && rowErrors.length <= 10 && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 space-y-1">
-              <p className="text-xs font-semibold text-amber-700">{rowErrors.length} avisos</p>
+            <div className="bg-muted/60 border border-border rounded-lg p-3 space-y-1">
+              <p className="text-xs font-semibold text-foreground">{rowErrors.length} avisos</p>
               {rowErrors.slice(0, 5).map((e, i) => (
-                <p key={i} className="text-[10px] text-amber-600">
+                <p key={i} className="text-[10px] text-muted-foreground">
                   Linha {e.row}: {e.field} — {e.message}
                 </p>
               ))}
               {rowErrors.length > 5 && (
-                <p className="text-[10px] text-amber-600">… e mais {rowErrors.length - 5}</p>
+                <p className="text-[10px] text-muted-foreground">… e mais {rowErrors.length - 5}</p>
               )}
             </div>
           )}
