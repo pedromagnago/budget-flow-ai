@@ -13,6 +13,7 @@ import ClientPortal from "@/pages/client/ClientPortal";
 import Schedule from "@/pages/schedule/Schedule";
 import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
+import ImportPage from "@/pages/import/ImportPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
