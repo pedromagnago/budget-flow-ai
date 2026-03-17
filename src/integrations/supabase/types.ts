@@ -14,13 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          cnpj: string | null
+          config: Json | null
+          created_at: string | null
+          estado: string | null
+          id: string
+          municipio: string | null
+          nome_fantasia: string | null
+          qtd_casas: number | null
+          razao_social: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          config?: Json | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string
+          municipio?: string | null
+          nome_fantasia?: string | null
+          qtd_casas?: number | null
+          razao_social: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          config?: Json | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string
+          municipio?: string | null
+          nome_fantasia?: string | null
+          qtd_casas?: number | null
+          razao_social?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          active: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: {
+          company_id: string
+          role: string
+        }[]
+      }
+      user_can_access_company: {
+        Args: { cid: string; uid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
