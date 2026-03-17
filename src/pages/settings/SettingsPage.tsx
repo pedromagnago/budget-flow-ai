@@ -85,7 +85,8 @@ export default function SettingsPage() {
 
   // ── New category ──
   const [newCat, setNewCat] = useState({ apropriacao_excel: '', departamento_omie: '', categoria_omie: '' });
-
+  const [newUser, setNewUser] = useState({ email: '', password: '', role: 'operador' });
+  const [showPassword, setShowPassword] = useState(false);
   const saveProject = () => updateCompany.mutate(projectForm);
   const saveIaConfig = () => {
     const newConfig: CompanyConfig = {
