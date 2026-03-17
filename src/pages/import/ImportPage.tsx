@@ -164,7 +164,7 @@ export default function ImportPage() {
                         <div key={dbCol} className="flex items-center gap-2">
                           <div className="flex items-center gap-1.5 w-40 shrink-0">
                             {isMapped ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                              <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                             ) : isRequired ? (
                               <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
                             ) : (
