@@ -114,6 +114,60 @@ export type Database = {
           },
         ]
       }
+      avanco_fisico: {
+        Row: {
+          casas_concluidas: number
+          company_id: string
+          created_at: string | null
+          data_registro: string
+          fotos: string[] | null
+          id: string
+          observacoes: string | null
+          percentual_real: number | null
+          registrado_por: string | null
+          servico_id: string
+        }
+        Insert: {
+          casas_concluidas?: number
+          company_id: string
+          created_at?: string | null
+          data_registro?: string
+          fotos?: string[] | null
+          id?: string
+          observacoes?: string | null
+          percentual_real?: number | null
+          registrado_por?: string | null
+          servico_id: string
+        }
+        Update: {
+          casas_concluidas?: number
+          company_id?: string
+          created_at?: string | null
+          data_registro?: string
+          fotos?: string[] | null
+          id?: string
+          observacoes?: string | null
+          percentual_real?: number | null
+          registrado_por?: string | null
+          servico_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avanco_fisico_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avanco_fisico_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categoria_depara: {
         Row: {
           apropriacao_excel: string
@@ -151,6 +205,110 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "categoria_depara_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cenario_ajustes: {
+        Row: {
+          campo_alterado: string | null
+          cenario_id: string
+          company_id: string
+          created_at: string | null
+          id: string
+          justificativa: string | null
+          parcelas: Json | null
+          referencia_id: string | null
+          referencia_tipo: string | null
+          tipo_ajuste: string
+          valor_novo: string | null
+          valor_original: string | null
+        }
+        Insert: {
+          campo_alterado?: string | null
+          cenario_id: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          justificativa?: string | null
+          parcelas?: Json | null
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo_ajuste: string
+          valor_novo?: string | null
+          valor_original?: string | null
+        }
+        Update: {
+          campo_alterado?: string | null
+          cenario_id?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          justificativa?: string | null
+          parcelas?: Json | null
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          tipo_ajuste?: string
+          valor_novo?: string | null
+          valor_original?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cenario_ajustes_cenario_id_fkey"
+            columns: ["cenario_id"]
+            isOneToOne: false
+            referencedRelation: "cenarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cenario_ajustes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cenarios: {
+        Row: {
+          ativo: boolean | null
+          company_id: string
+          created_at: string | null
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          company_id: string
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cenarios_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -316,6 +474,44 @@ export type Database = {
         }
         Relationships: []
       }
+      cronograma_servicos: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          nome: string
+          preco_unitario: number | null
+          quantidade: number | null
+          valor_total: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          preco_unitario?: number | null
+          quantidade?: number | null
+          valor_total: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          preco_unitario?: number | null
+          quantidade?: number | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_servicos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documentos: {
         Row: {
           company_id: string
@@ -362,6 +558,107 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicoes: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          data_fim: string
+          data_inicio: string
+          data_liberacao: string | null
+          id: string
+          numero: number
+          observacoes: string | null
+          status: string | null
+          updated_at: string | null
+          valor_liberado: number | null
+          valor_planejado: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          data_fim: string
+          data_inicio: string
+          data_liberacao?: string | null
+          id?: string
+          numero: number
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_liberado?: number | null
+          valor_planejado: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          data_fim?: string
+          data_inicio?: string
+          data_liberacao?: string | null
+          id?: string
+          numero?: number
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_liberado?: number | null
+          valor_planejado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicoes_metas: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          medicao_numero: number
+          meta_casas: number | null
+          meta_percentual: number
+          servico_id: string
+          valor_liberado: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          medicao_numero: number
+          meta_casas?: number | null
+          meta_percentual: number
+          servico_id: string
+          valor_liberado?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          medicao_numero?: number
+          meta_casas?: number | null
+          meta_percentual?: number
+          servico_id?: string
+          valor_liberado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_metas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_metas_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
             referencedColumns: ["id"]
           },
         ]
