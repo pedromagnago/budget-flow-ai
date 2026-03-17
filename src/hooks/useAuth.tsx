@@ -31,9 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Query user_roles table directly via RPC or raw query
       // Table may not exist yet during initial setup
-      const { data, error } = await supabase
-        .rpc('get_user_role', { _user_id: userId }) as { data: { role: string; company_id: string } | null; error: unknown };
-      
+      const { data, error } = await (supabase as unknown as { rpc: (fn: string, args: Record<string, string>) => Promise<{ data: { role: string; company_id: string } | null; error: unknown }> })
+        .rpc('get_user_role', { _user_id: userId });
       if (error || !data) {
         // Fallback: default to supervisor for demo
         return { role: 'supervisor' as UserRole, companyId: null };
