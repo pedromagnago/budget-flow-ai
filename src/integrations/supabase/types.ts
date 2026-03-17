@@ -955,6 +955,19 @@ export type Database = {
       }
     }
     Functions: {
+      get_orcado_vs_realizado: {
+        Args: { _company_id: string }
+        Returns: {
+          grupo: string
+          grupo_id: string
+          itens_com_consumo: number
+          pct_consumido: number
+          total_itens: number
+          valor_consumido: number
+          valor_orcado: number
+          valor_saldo: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: {
@@ -962,6 +975,7 @@ export type Database = {
           role: string
         }[]
       }
+      refresh_materialized_views: { Args: never; Returns: undefined }
       user_can_access_company: {
         Args: { cid: string; uid: string }
         Returns: boolean
