@@ -1,77 +1,137 @@
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-
-const SERVICES = [
-  'Instalações/Canteiros', 'Fundação Radier', 'Hidrosanitário Radier', 'Administração obra',
-  'Paredes pré-moldadas', 'Estrutura telhado', 'Impermeabilização', 'Revestimentos',
-  'Portas internas', 'Elétrica', 'Pintura interna', 'Limpeza final',
-];
-
-const MEDICOES = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'];
-
-// Demo: meta/real pairs
-const DEMO_DATA: Record<string, Record<string, { meta: number; real: number }>> = {
-  'Instalações/Canteiros': { M1: { meta: 100, real: 100 } },
-  'Fundação Radier': { M1: { meta: 50, real: 35 }, M2: { meta: 50, real: 0 } },
-  'Hidrosanitário Radier': { M1: { meta: 50, real: 30 }, M2: { meta: 50, real: 0 } },
-  'Administração obra': { M1: { meta: 12.5, real: 12.5 }, M2: { meta: 12.5, real: 0 }, M3: { meta: 12.5, real: 0 }, M4: { meta: 12.5, real: 0 }, M5: { meta: 12.5, real: 0 }, M6: { meta: 12.5, real: 0 }, M7: { meta: 12.5, real: 0 }, M8: { meta: 12.5, real: 0 } },
-  'Paredes pré-moldadas': { M3: { meta: 31.25, real: 0 }, M4: { meta: 31.25, real: 0 }, M5: { meta: 37.5, real: 0 } },
-  'Estrutura telhado': { M3: { meta: 31.25, real: 0 }, M4: { meta: 31.25, real: 0 }, M5: { meta: 37.5, real: 0 } },
-};
+import { SkeletonTable } from '@/components/shared/SkeletonTable';
+import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico } from '@/hooks/useSchedule';
+import { ProgressModal } from '@/components/schedule/ProgressModal';
+import { ImpactPanel } from '@/components/schedule/ImpactPanel';
 
 function getCellColor(meta: number, real: number) {
-  if (real >= meta) return 'bg-consumido/10 text-consumido';
+  if (real >= meta && meta > 0) return 'bg-consumido/10 text-consumido';
   if (real > 0) return 'bg-module-dashboard/10 text-module-dashboard';
   if (meta > 0) return 'bg-destructive/10 text-destructive';
   return 'bg-muted/30 text-muted-foreground';
 }
 
+interface ModalState {
+  servicoId: string;
+  servicoNome: string;
+  medicaoNumero: number;
+  qtdTotal: number;
+}
+
 export default function Schedule() {
+  const { data: servicos, isLoading: loadingServicos } = useCronogramaServicos();
+  const { data: medicoes, isLoading: loadingMedicoes } = useMedicoes();
+  const { data: metas } = useMedicoesMetas();
+  const { data: avancos } = useAvancoFisico();
+  const [modal, setModal] = useState<ModalState | null>(null);
+
+  // Build lookup: servicoId -> latest avanco percentual
+  const avancoMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    (avancos ?? []).forEach(a => {
+      // Keep highest casas_concluidas per service
+      const pct = a.percentual_real ?? 0;
+      if (!map[a.servico_id] || pct > map[a.servico_id]) {
+        map[a.servico_id] = pct;
+      }
+    });
+    return map;
+  }, [avancos]);
+
+  // Build lookup: servicoId_medicaoNumero -> meta_percentual
+  const metaMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    (metas ?? []).forEach(m => {
+      map[`${m.servico_id}_${m.medicao_numero}`] = m.meta_percentual;
+    });
+    return map;
+  }, [metas]);
+
+  const medicaoNumbers = (medicoes ?? []).map(m => m.numero);
+  const isLoading = loadingServicos || loadingMedicoes;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tighter">Cronograma Físico</h1>
       <p className="text-sm text-muted-foreground">Avanço por serviço × medição — clique na célula para registrar progresso</p>
 
       <div className="bg-card border rounded-xl shadow-card overflow-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50">
-              <th className="text-left py-2 px-3 sticky left-0 bg-muted/50 min-w-[200px]">Serviço</th>
-              {MEDICOES.map(m => (
-                <th key={m} className="text-center py-2 px-3 min-w-[90px]">{m}</th>
-              ))}
-              <th className="text-center py-2 px-3 min-w-[80px]">% Geral</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SERVICES.map(service => {
-              const data = DEMO_DATA[service] ?? {};
-              const totalMeta = MEDICOES.reduce((s, m) => s + (data[m]?.meta ?? 0), 0);
-              const totalReal = MEDICOES.reduce((s, m) => s + (data[m]?.real ?? 0), 0);
-              const pctGeral = totalMeta > 0 ? (totalReal / totalMeta) * 100 : 0;
+        {isLoading ? (
+          <div className="p-4"><SkeletonTable rows={10} cols={10} /></div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="text-left py-2 px-3 sticky left-0 bg-muted/50 z-10 min-w-[200px]">Serviço</th>
+                {medicaoNumbers.map(n => (
+                  <th key={n} className="text-center py-2 px-3 min-w-[90px]">M{n}</th>
+                ))}
+                <th className="text-center py-2 px-3 min-w-[80px]">% Geral</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(servicos ?? []).map(servico => {
+                const realPct = avancoMap[servico.id] ?? 0;
+                // Total meta for this service
+                const totalMeta = medicaoNumbers.reduce((s, n) => s + (metaMap[`${servico.id}_${n}`] ?? 0), 0);
+                const pctGeral = totalMeta > 0 ? (realPct / totalMeta) * 100 : (realPct > 0 ? 100 : 0);
 
-              return (
-                <tr key={service} className="border-t hover:bg-muted/20 transition-colors">
-                  <td className="py-2 px-3 font-medium sticky left-0 bg-card">{service}</td>
-                  {MEDICOES.map(m => {
-                    const cell = data[m];
-                    if (!cell) return <td key={m} className="py-2 px-3 text-center text-muted-foreground/30">—</td>;
-                    return (
-                      <td key={m} className="py-1 px-2 text-center">
-                        <div className={cn('rounded px-2 py-1 text-xs font-mono cursor-pointer', getCellColor(cell.meta, cell.real))}>
-                          {cell.meta}% / {cell.real}%
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-3 text-center font-mono text-xs font-bold">
-                    {pctGeral.toFixed(0)}%
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={servico.id} className="border-t hover:bg-muted/20 transition-colors">
+                    <td className="py-2 px-3 font-medium sticky left-0 bg-card z-10 text-xs">{servico.nome}</td>
+                    {medicaoNumbers.map(n => {
+                      const meta = metaMap[`${servico.id}_${n}`];
+                      if (meta === undefined) {
+                        return <td key={n} className="py-2 px-3 text-center text-muted-foreground/30">—</td>;
+                      }
+                      // Distribute realPct proportionally or show it in first cell
+                      const cellReal = realPct >= totalMeta ? meta : Math.min(realPct, meta);
+                      return (
+                        <td key={n} className="py-1 px-2 text-center">
+                          <div
+                            className={cn('rounded px-2 py-1 text-[11px] font-mono cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all', getCellColor(meta, cellReal))}
+                            onClick={() => setModal({
+                              servicoId: servico.id,
+                              servicoNome: servico.nome,
+                              medicaoNumero: n,
+                              qtdTotal: servico.quantidade ?? 64,
+                            })}
+                          >
+                            {meta.toFixed(0)}% / {cellReal.toFixed(0)}%
+                          </div>
+                        </td>
+                      );
+                    })}
+                    <td className="py-2 px-3 text-center font-mono text-xs font-bold">
+                      {pctGeral.toFixed(0)}%
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* Impact Panel */}
+      <ImpactPanel
+        medicoes={medicoes ?? []}
+        servicos={servicos ?? []}
+        metaMap={metaMap}
+        avancoMap={avancoMap}
+      />
+
+      {/* Progress Modal */}
+      {modal && (
+        <ProgressModal
+          servicoId={modal.servicoId}
+          servicoNome={modal.servicoNome}
+          medicaoNumero={modal.medicaoNumero}
+          qtdTotal={modal.qtdTotal}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }
