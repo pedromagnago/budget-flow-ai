@@ -18,6 +18,8 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+interface RoleRow { role: string; company_id: string }
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -27,24 +29,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading: true,
   });
 
-  const fetchRole = useCallback(async (userId: string) => {
+  const fetchRole = useCallback(async (userId: string): Promise<{ role: UserRole; companyId: string | null }> => {
     try {
-      // Query user_roles table directly via RPC or raw query
-      // Table may not exist yet during initial setup
-      const { data, error } = await (supabase as unknown as { rpc: (fn: string, args: Record<string, string>) => Promise<{ data: { role: string; company_id: string } | null; error: unknown }> })
-        .rpc('get_user_role', { _user_id: userId });
-      if (error || !data) {
-        // Fallback: default to supervisor for demo
-        return { role: 'supervisor' as UserRole, companyId: null };
+      const { data, error } = await supabase.rpc('get_user_role' as never, { _user_id: userId } as never) as unknown as { data: RoleRow[] | null; error: Error | null };
+      
+      if (error || !data || !Array.isArray(data) || data.length === 0) {
+        return { role: 'supervisor', companyId: null };
       }
-
+      
+      const row = data[0];
       return {
-        role: (data.role as UserRole) ?? null,
-        companyId: (data.company_id as string) ?? null,
+        role: (row.role as UserRole) ?? 'supervisor',
+        companyId: row.company_id ?? null,
       };
     } catch {
-      // Table doesn't exist yet — default role for development
-      return { role: 'supervisor' as UserRole, companyId: null };
+      return { role: 'supervisor', companyId: null };
     }
   }, []);
 
@@ -52,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          // Defer role fetch to avoid Supabase deadlock
           setTimeout(async () => {
             const { role, companyId } = await fetchRole(session.user.id);
             setState({ user: session.user, session, role, companyId, loading: false });
