@@ -114,6 +114,44 @@ export function useUserRoles() {
   });
 }
 
+export function useInviteUser() {
+  const qc = useQueryClient();
+  const { companyId } = useCompany();
+  return useMutation({
+    mutationFn: async (input: { email: string; password: string; role: string }) => {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { ...input, company_id: companyId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['user-roles'] });
+      toast.success(`Usuário ${data.email} criado com sucesso`);
+    },
+    onError: (err: Error) => toast.error(err.message || 'Erro ao criar usuário'),
+  });
+}
+
+export function useUpdateUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; role?: string; active?: boolean }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .update(updates as never)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-roles'] });
+      toast.success('Usuário atualizado');
+    },
+    onError: () => toast.error('Erro ao atualizar'),
+  });
+}
+
 // ── Alertas ──
 export function useAlertas() {
   const { companyId } = useCompany();
