@@ -13,7 +13,8 @@ import { Save, Plus, Eye, EyeOff, CheckCircle2, AlertTriangle, Users, Layers, Be
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
-  useUserRoles, useAlertas, useMarkAlertaRead,
+  useUserRoles, useInviteUser, useUpdateUserRole,
+  useAlertas, useMarkAlertaRead,
 } from '@/hooks/useSettings';
 import { useBudgetSummary } from '@/hooks/useBudget';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
