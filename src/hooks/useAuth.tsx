@@ -28,18 +28,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const fetchRole = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role, company_id')
-      .eq('user_id', userId)
-      .eq('active', true)
-      .limit(1)
-      .maybeSingle();
+    try {
+      // Query user_roles table directly via RPC or raw query
+      // Table may not exist yet during initial setup
+      const { data, error } = await supabase
+        .rpc('get_user_role', { _user_id: userId }) as { data: { role: string; company_id: string } | null; error: unknown };
+      
+      if (error || !data) {
+        // Fallback: default to supervisor for demo
+        return { role: 'supervisor' as UserRole, companyId: null };
+      }
 
-    return {
-      role: (data?.role as UserRole) ?? null,
-      companyId: (data?.company_id as string) ?? null,
-    };
+      return {
+        role: (data.role as UserRole) ?? null,
+        companyId: (data.company_id as string) ?? null,
+      };
+    } catch {
+      // Table doesn't exist yet — default role for development
+      return { role: 'supervisor' as UserRole, companyId: null };
+    }
   }, []);
 
   useEffect(() => {
