@@ -885,6 +885,13 @@ export type Database = {
             referencedRelation: "orcamento_grupos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orcamento_items_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
         ]
       }
       user_roles: {
@@ -924,7 +931,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_orcado_vs_realizado: {
+        Row: {
+          company_id: string | null
+          grupo: string | null
+          grupo_id: string | null
+          itens_com_consumo: number | null
+          pct_consumido: number | null
+          total_itens: number | null
+          valor_consumido: number | null
+          valor_orcado: number | null
+          valor_saldo: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_grupos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_role: {
