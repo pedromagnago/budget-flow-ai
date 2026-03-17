@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      categoria_depara: {
+        Row: {
+          apropriacao_excel: string
+          ativo: boolean | null
+          categoria_omie: string | null
+          company_id: string
+          created_at: string | null
+          departamento_omie: string
+          id: string
+          match_automatico: boolean | null
+          tipo_excel: string | null
+        }
+        Insert: {
+          apropriacao_excel: string
+          ativo?: boolean | null
+          categoria_omie?: string | null
+          company_id: string
+          created_at?: string | null
+          departamento_omie: string
+          id?: string
+          match_automatico?: boolean | null
+          tipo_excel?: string | null
+        }
+        Update: {
+          apropriacao_excel?: string
+          ativo?: boolean | null
+          categoria_omie?: string | null
+          company_id?: string
+          created_at?: string | null
+          departamento_omie?: string
+          id?: string
+          match_automatico?: boolean | null
+          tipo_excel?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categoria_depara_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           cnpj: string | null
@@ -55,6 +99,122 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      orcamento_grupos: {
+        Row: {
+          ativo: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          nome: string
+          valor_total: number
+        }
+        Insert: {
+          ativo?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          valor_total: number
+        }
+        Update: {
+          ativo?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_grupos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_items: {
+        Row: {
+          apropriacao: string
+          ativo: boolean | null
+          company_id: string
+          created_at: string | null
+          custo_casa: number | null
+          custo_unitario: number | null
+          grupo_id: string
+          id: string
+          item: string
+          linha_origem: number | null
+          quantidade_total: number | null
+          quantidade_unit: number | null
+          quinzenas: Json | null
+          tipo: string | null
+          unidade: string | null
+          updated_at: string | null
+          valor_consumido: number | null
+          valor_orcado: number
+          valor_saldo: number | null
+        }
+        Insert: {
+          apropriacao: string
+          ativo?: boolean | null
+          company_id: string
+          created_at?: string | null
+          custo_casa?: number | null
+          custo_unitario?: number | null
+          grupo_id: string
+          id?: string
+          item: string
+          linha_origem?: number | null
+          quantidade_total?: number | null
+          quantidade_unit?: number | null
+          quinzenas?: Json | null
+          tipo?: string | null
+          unidade?: string | null
+          updated_at?: string | null
+          valor_consumido?: number | null
+          valor_orcado: number
+          valor_saldo?: number | null
+        }
+        Update: {
+          apropriacao?: string
+          ativo?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          custo_casa?: number | null
+          custo_unitario?: number | null
+          grupo_id?: string
+          id?: string
+          item?: string
+          linha_origem?: number | null
+          quantidade_total?: number | null
+          quantidade_unit?: number | null
+          quinzenas?: Json | null
+          tipo?: string | null
+          unidade?: string | null
+          updated_at?: string | null
+          valor_consumido?: number | null
+          valor_orcado?: number
+          valor_saldo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
