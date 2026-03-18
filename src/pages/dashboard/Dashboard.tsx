@@ -54,13 +54,25 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tighter">
-          Status do Projeto: {qtdCasas} Casas — {quinzena}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {municipio && estado ? `${municipio}/${estado}` : companyName}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tighter">
+            Status do Projeto: {qtdCasas} Casas — {activeQ}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {municipio && estado ? `${municipio}/${estado}` : companyName}
+          </p>
+        </div>
+        <Select value={activeQ} onValueChange={setSelectedQ}>
+          <SelectTrigger className="w-[100px] h-9 text-xs">
+            <SelectValue placeholder="Quinzena" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableQs.map(q => (
+              <SelectItem key={q} value={q}>{q}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <GoldenRuleBar orcado={totalOrcado} consumido={totalConsumido} saldo={totalSaldo} />
