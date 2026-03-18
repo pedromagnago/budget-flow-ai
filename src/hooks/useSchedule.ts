@@ -42,9 +42,9 @@ export function useCronogramaServicos() {
     queryKey: ['cronograma-servicos'],
     queryFn: async (): Promise<CronogramaServico[]> => {
       const { data, error } = await supabase
-        .from('cronograma_servicos' as never)
-        .select('*' as never)
-        .order('nome' as never, { ascending: true } as never) as unknown as { data: CronogramaServico[] | null; error: Error | null };
+        .from('cronograma_servicos')
+        .select('*')
+        .order('nome', { ascending: true });
 
       if (error) throw error;
       return (data ?? []).map(s => ({ ...s, valor_total: Number(s.valor_total), preco_unitario: s.preco_unitario ? Number(s.preco_unitario) : null }));
