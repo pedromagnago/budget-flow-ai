@@ -25,8 +25,8 @@ export function SummaryCards({ totalOrcado, totalConsumido, totalSaldo, pctExecu
   const values: Record<string, number> = { orcado: totalOrcado, consumido: totalConsumido, saldo: totalSaldo, pct: pctExecucao, receita: totalReceita, margem: margemBruta };
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      {CARDS.map(card => (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      {CARDS.filter(card => !('showOnlyIfPositive' in card && card.showOnlyIfPositive) || values[card.key] > 0).map(card => (
         <div key={card.key} className="bg-card border rounded-xl p-5 shadow-card">
           <div className="flex items-center gap-2 mb-3">
             <card.icon className={`h-4 w-4 ${card.accent}`} />

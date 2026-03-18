@@ -83,11 +83,16 @@ export function useDashboard() {
   // Latest 5 documents
   const latestDocs = (documents ?? []).slice(0, 5);
 
+  const totalReceita = receitaTotal ?? 0;
+  const margemBruta = totalReceita - totalOrcado;
+
   return {
     totalOrcado,
     totalConsumido,
     totalSaldo,
     pctExecucao,
+    totalReceita,
+    margemBruta,
     chartGroups,
     topDesvios,
     curvaData,

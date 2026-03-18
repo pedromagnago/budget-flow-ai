@@ -182,6 +182,10 @@ export function useSmartImport() {
             custo_casa: parseBRNumber(row[findHeader('custo_casa')] ?? '') || null,
             valor_orcado: parseBRNumber(row[findHeader('valor_orcado')] ?? ''),
             quinzenas: Object.keys(quinzenas).length > 0 ? quinzenas : null,
+            fornecedor: (row[findHeader('fornecedor')] ?? '').trim() || null,
+            forma_pagamento: (row[findHeader('forma_pagto')] ?? row[findHeader('forma_pagamento')] ?? '').trim() || null,
+            parcelamento: (row[findHeader('parcelamento')] ?? '').trim() || null,
+            observacoes: (row[findHeader('obs')] ?? row[findHeader('observacoes')] ?? row[findHeader('condição')] ?? '').trim() || null,
           };
         });
 
