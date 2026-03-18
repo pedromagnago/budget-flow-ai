@@ -20,6 +20,7 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Validação de campos obrigatórios | ✅ |
 | Suporte a formato numérico brasileiro | ✅ |
 | Importação de Serviços, Medições, Metas, Lançamentos, Categorias | ✅ |
+| Campos opcionais: fornecedor, forma_pagamento, parcelamento, observacoes | ✅ |
 | Suporte a Excel (.xlsx) | ⏳ |
 | Histórico de importações | ⏳ |
 
@@ -28,26 +29,30 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Funcionalidade | Status |
 |---|---|
 | Barra Regra de Ouro | ✅ |
-| Cards resumo | ✅ |
+| Cards resumo (Orçado, Consumido, Saldo, % Execução) | ✅ |
+| Cards Receita Prevista e Margem Bruta | ✅ |
 | Gráfico Orçado vs Realizado | ✅ |
-| Curva S | ✅ |
+| Curva S (com linha de receita acumulada) | ✅ |
 | Top 5 desvios | ✅ |
 | Fluxo de caixa | ✅ |
 | Mini card auditoria | ✅ |
 | Últimos documentos | ✅ |
-| Filtro por quinzena/período | ⏳ |
-| Quinzena dinâmica (hardcoded "Q01") | ⏳ |
+| Filtro por quinzena (Q1-Q10) | ✅ |
+| Drill-down nos gráficos | ⏳ |
 
 ## 3. AUDITORIA (`/audit`) — Classificação IA
 
 | Funcionalidade | Status |
 |---|---|
-| Lista de classificações com filtros | ✅ |
-| Indicadores | ✅ |
-| Painel aprovar/rejeitar | ✅ |
-| Edge function classificação IA | ⏳ |
-| Upload → classificação automática | ⏳ |
-| Auto-approve por score | ⏳ |
+| Lista de classificações com filtros (status, score) | ✅ |
+| Indicadores (pendentes, aprovadas, taxa acerto, score médio) | ✅ |
+| Painel aprovar/corrigir/rejeitar com audit log | ✅ |
+| Edge function classificação IA (Gemini + tool calling) | ✅ |
+| Upload → classificação automática (chamada no useUploadDocument) | ✅ |
+| Dados de teste para validação da UI | ✅ |
+| Auto-approve por score (configurável) | ✅ |
+| Preview de documento no painel de detalhe | ⏳ |
+| Paginação da tabela | ⏳ |
 
 ## 4. CRONOGRAMA (`/schedule`) — Avanço Físico
 
@@ -74,7 +79,7 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Funcionalidade | Status |
 |---|---|
 | Barra Regra de Ouro | ✅ |
-| Upload de documentos | ✅ |
+| Upload de documentos (com classificação IA automática) | ✅ |
 | Histórico de documentos | ✅ |
 | Tabela orçamento por grupo | ✅ |
 | Notificações ao cliente | ⏳ |
@@ -90,6 +95,18 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Alertas | ✅ |
 | Sync automático Omie | ⏳ |
 
+## Mapa de Acesso por Papel (Role)
+
+| Página | cliente | operador | supervisor | super_admin |
+|---|---|---|---|---|
+| Dashboard | ✗ | ✓ | ✓ | ✓ |
+| Documentos | ✓ | ✓ | ✓ | ✓ |
+| Auditoria | ✗ | ✓ | ✓ | ✓ |
+| Cronograma | ✗ | ✗ | ✓ | ✓ |
+| Simulador | ✗ | ✗ | ✓ | ✓ |
+| Configurações | ✗ | ✗ | ✓ | ✓ |
+| Importação | ✗ | ✗ | ✓ | ✓ |
+
 ## Ordem Recomendada de Uso
 
 1. `/settings` → Configurar empresa e usuários
@@ -104,7 +121,7 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 ## Pendências Globais
 
 1. Suporte a Excel (.xlsx) na importação
-2. Edge function de classificação IA de documentos
-3. Sync automático com Omie ERP
-4. Quinzena dinâmica no Dashboard
-5. Alertas automáticos de desvio e atraso
+2. Sync automático com Omie ERP
+3. Preview de documentos no painel de auditoria
+4. Alertas automáticos de desvio e atraso
+5. UI de distribuição por quinzena (Q1-Q10) dos itens do orçamento
