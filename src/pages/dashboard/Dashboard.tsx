@@ -13,6 +13,7 @@ import { FileUp } from 'lucide-react';
 export default function Dashboard() {
   const {
     totalOrcado, totalConsumido, totalSaldo, pctExecucao,
+    totalReceita, margemBruta,
     chartGroups, topDesvios, curvaData, fluxoData,
     medicoes, auditStats, latestDocs, loadingBudget,
     hasData, quinzena, companyName, municipio, estado, qtdCasas,
@@ -54,6 +55,8 @@ export default function Dashboard() {
         totalConsumido={totalConsumido}
         totalSaldo={totalSaldo}
         pctExecucao={pctExecucao}
+        totalReceita={totalReceita}
+        margemBruta={margemBruta}
         loading={loadingBudget}
       />
 

@@ -1,15 +1,37 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useBudgetSummary } from '@/hooks/useBudget';
 import { useAuditStats } from '@/hooks/useAuditQueue';
 import { useMedicoes } from '@/hooks/useSchedule';
 import { useDocuments } from '@/hooks/useDocuments';
 import { useCompanyConfig } from '@/hooks/useCompanyConfig';
+import { useCompany } from '@/hooks/useCompany';
 
 export function useDashboard() {
+  const { companyId } = useCompany();
   const { data: budgetGroups, isLoading: loadingBudget } = useBudgetSummary();
   const { data: auditStats } = useAuditStats();
   const { data: medicoes } = useMedicoes();
   const { data: documents } = useDocuments();
   const { data: company } = useCompanyConfig();
+
+  // Query receitas previstas
+  const { data: receitaTotal } = useQuery({
+    queryKey: ['receita-total', companyId],
+    queryFn: async () => {
+      if (!companyId) return 0;
+      const { data, error } = await supabase
+        .from('omie_lancamentos')
+        .select('valor')
+        .eq('company_id', companyId)
+        .eq('tipo', 'receita')
+        .eq('e_previsao', true)
+        .is('deleted_at', null);
+      if (error || !data) return 0;
+      return data.reduce((s, r) => s + Math.abs(Number(r.valor)), 0);
+    },
+    enabled: !!companyId,
+  });
 
   const quinzena = company?.config?.quinzena_atual ?? 'Q1';
   const companyName = company?.nome_fantasia || company?.razao_social || 'Projeto';
@@ -61,11 +83,16 @@ export function useDashboard() {
   // Latest 5 documents
   const latestDocs = (documents ?? []).slice(0, 5);
 
+  const totalReceita = receitaTotal ?? 0;
+  const margemBruta = totalReceita - totalOrcado;
+
   return {
     totalOrcado,
     totalConsumido,
     totalSaldo,
     pctExecucao,
+    totalReceita,
+    margemBruta,
     chartGroups,
     topDesvios,
     curvaData,

@@ -5,6 +5,7 @@ interface CurvaPoint {
   quinzena: string;
   orcadoAcum: number;
   realizadoAcum: number;
+  receitaAcum?: number;
 }
 
 interface Props {
@@ -28,6 +29,9 @@ export function SCurveChart({ data }: Props) {
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line type="monotone" dataKey="orcadoAcum" name="Orçado Acum." stroke="hsl(var(--orcado))" strokeDasharray="5 5" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="realizadoAcum" name="Realizado Acum." stroke="hsl(var(--consumido))" strokeWidth={2} />
+          {data.some(d => d.receitaAcum && d.receitaAcum > 0) && (
+            <Line type="monotone" dataKey="receitaAcum" name="Receita Acum." stroke="hsl(var(--saldo))" strokeDasharray="8 4" strokeWidth={2} dot={false} />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>
