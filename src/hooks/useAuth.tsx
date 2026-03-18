@@ -39,11 +39,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const row = data[0];
       return {
-        role: (row.role as UserRole) ?? 'supervisor',
+        role: (row.role as UserRole) ?? null,
         companyId: row.company_id ?? null,
       };
     } catch {
-      return { role: 'supervisor', companyId: null };
+      return { role: null, companyId: null };
     }
   }, []);
 
