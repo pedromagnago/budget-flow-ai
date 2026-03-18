@@ -814,10 +814,14 @@ export type Database = {
           created_at: string | null
           custo_casa: number | null
           custo_unitario: number | null
+          forma_pagamento: string | null
+          fornecedor: string | null
           grupo_id: string
           id: string
           item: string
           linha_origem: number | null
+          observacoes: string | null
+          parcelamento: string | null
           quantidade_total: number | null
           quantidade_unit: number | null
           quinzenas: Json | null
@@ -835,10 +839,14 @@ export type Database = {
           created_at?: string | null
           custo_casa?: number | null
           custo_unitario?: number | null
+          forma_pagamento?: string | null
+          fornecedor?: string | null
           grupo_id: string
           id?: string
           item: string
           linha_origem?: number | null
+          observacoes?: string | null
+          parcelamento?: string | null
           quantidade_total?: number | null
           quantidade_unit?: number | null
           quinzenas?: Json | null
@@ -856,10 +864,14 @@ export type Database = {
           created_at?: string | null
           custo_casa?: number | null
           custo_unitario?: number | null
+          forma_pagamento?: string | null
+          fornecedor?: string | null
           grupo_id?: string
           id?: string
           item?: string
           linha_origem?: number | null
+          observacoes?: string | null
+          parcelamento?: string | null
           quantidade_total?: number | null
           quantidade_unit?: number | null
           quinzenas?: Json | null
