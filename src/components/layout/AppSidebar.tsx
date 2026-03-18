@@ -57,6 +57,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
 
   const visibleItems = NAV_ITEMS.filter(item => {
     if (!item.roles) return true;
+    if (role === 'super_admin') return true;
     return role && item.roles.includes(role);
   });
 
