@@ -185,8 +185,8 @@ export function useCreateServico() {
       const qty = input.quantidade ?? 64;
       const preco = qty > 0 ? input.valor_total / qty : 0;
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
-        .insert({ ...input, quantidade: qty, preco_unitario: preco, company_id: companyId ?? 'default' } as never) as unknown as { error: Error | null };
+        .from('cronograma_servicos')
+        .insert({ ...input, quantidade: qty, preco_unitario: preco, company_id: companyId ?? 'default' });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
