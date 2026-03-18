@@ -55,6 +55,8 @@ export default function Dashboard() {
         totalConsumido={totalConsumido}
         totalSaldo={totalSaldo}
         pctExecucao={pctExecucao}
+        totalReceita={totalReceita}
+        margemBruta={margemBruta}
         loading={loadingBudget}
       />
 
