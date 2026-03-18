@@ -287,6 +287,25 @@ function BudgetImportSection() {
         </div>
       )}
     </div>
+
+      {/* Confirmation dialog for clearing data */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar orçamento existente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os grupos e itens do orçamento atual serão excluídos permanentemente antes da nova importação. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={doImport} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, limpar e importar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 
