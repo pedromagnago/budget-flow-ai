@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
+import { useSidebarBadges } from '@/hooks/useSidebarBadges';
 import {
   BarChart3,
   Upload,
@@ -24,14 +26,14 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   roles?: UserRole[];
-  badge?: number;
+  badgeKey?: 'pendingAudit';
   accent?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: BarChart3, accent: 'module-dashboard' },
   { title: 'Portal Cliente', href: '/client', icon: Upload, roles: ['cliente'], accent: 'module-client' },
-  { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badge: 12, accent: 'module-audit' },
+  { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit', accent: 'module-audit' },
   { title: 'Cronograma', href: '/schedule', icon: Calendar, accent: 'module-schedule' },
   { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['operador', 'supervisor', 'super_admin'], accent: 'module-simulator' },
   { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'], accent: 'module-settings' },
@@ -46,11 +48,22 @@ interface AppSidebarProps {
 export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const { pathname } = useLocation();
   const { role, user, signOut } = useAuth();
+  const { data: company } = useCompanyConfig();
+  const badges = useSidebarBadges();
+
+  const quinzena = company?.config?.quinzena_atual ?? 'Q1';
+  const companyName = company?.nome_fantasia || company?.razao_social || 'Projeto';
+  const companyStatus = company?.status === 'ativo' ? 'Ativo' : (company?.status ?? 'Ativo');
 
   const visibleItems = NAV_ITEMS.filter(item => {
     if (!item.roles) return true;
     return role && item.roles.includes(role);
   });
+
+  const getBadge = (item: NavItem): number => {
+    if (item.badgeKey === 'pendingAudit') return badges.pendingAudit;
+    return 0;
+  };
 
   return (
     <aside
@@ -66,8 +79,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate">SFP 64 Casas</p>
-            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Q1 — Ativo</p>
+            <p className="text-sm font-semibold truncate">{companyName}</p>
+            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">{quinzena} — {companyStatus}</p>
           </div>
         )}
       </div>
@@ -78,6 +91,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
         {visibleItems.map(item => {
           const isActive = pathname.startsWith(item.href);
+          const badgeCount = getBadge(item);
           return (
             <Link
               key={item.href}
@@ -95,9 +109,9 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               {!collapsed && (
                 <>
                   <span className="flex-1">{item.title}</span>
-                  {item.badge != null && item.badge > 0 && (
+                  {badgeCount > 0 && (
                     <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-sidebar-primary text-sidebar-primary-foreground">
-                      {item.badge}
+                      {badgeCount}
                     </Badge>
                   )}
                 </>
@@ -122,9 +136,11 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           {!collapsed && (
             <>
               <span className="flex-1">Alertas</span>
-              <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-destructive text-destructive-foreground">
-                3
-              </Badge>
+              {badges.unreadAlerts > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-destructive text-destructive-foreground">
+                  {badges.unreadAlerts}
+                </Badge>
+              )}
             </>
           )}
         </Link>

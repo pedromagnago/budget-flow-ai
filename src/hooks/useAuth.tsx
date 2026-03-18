@@ -34,16 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.rpc('get_user_role' as never, { _user_id: userId } as never) as unknown as { data: RoleRow[] | null; error: Error | null };
       
       if (error || !data || !Array.isArray(data) || data.length === 0) {
-        return { role: 'supervisor', companyId: null };
+        return { role: null, companyId: null };
       }
       
       const row = data[0];
       return {
-        role: (row.role as UserRole) ?? 'supervisor',
+        role: (row.role as UserRole) ?? null,
         companyId: row.company_id ?? null,
       };
     } catch {
-      return { role: 'supervisor', companyId: null };
+      return { role: null, companyId: null };
     }
   }, []);
 

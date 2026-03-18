@@ -15,7 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, role } = useAuth();
+  const { signIn, role, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -61,9 +61,34 @@ export default function Login() {
     }
   };
 
-  if (role) {
+  
+
+  // User logged in with a role → redirect
+  if (user && role) {
     navigate(ROLE_REDIRECT[role], { replace: true });
     return null;
+  }
+
+  // User logged in but no role → waiting for approval
+  if (user && !authLoading && !role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-full max-w-sm space-y-6 px-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+            <Building2 className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-lg font-semibold">Aguardando Aprovação</h1>
+            <p className="text-sm text-muted-foreground">
+              Sua conta foi criada com sucesso. Um administrador precisa atribuir seu papel e empresa para liberar o acesso.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => { supabase.auth.signOut(); }}>
+            Sair
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

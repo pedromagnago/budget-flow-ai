@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import {
   Upload, FileSpreadsheet, CheckCircle2, AlertTriangle,
   Layers, Calendar, BarChart3, ArrowRightLeft, DollarSign, Target,
@@ -32,27 +37,52 @@ function BudgetImportSection() {
   const [fileName, setFileName] = useState('');
   const [summary, setSummary] = useState<SmartImportSummary | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { importBudget, importing, progress } = useSmartImport();
+
+  const processData = (headers: string[], rows: ParsedRow[], name: string) => {
+    if (headers.length === 0) {
+      toast.error('Arquivo vazio ou formato inválido');
+      return;
+    }
+    setCsvHeaders(headers);
+    setCsvRows(rows);
+    setFileName(name);
+    setSummary(analyzeRows(headers, rows));
+  };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
+    const ext = file.name.split('.').pop()?.toLowerCase();
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const { headers, rows } = parseCSV(text);
-      if (headers.length === 0) {
-        toast.error('Arquivo vazio ou formato inválido');
-        return;
-      }
-      setCsvHeaders(headers);
-      setCsvRows(rows);
-      setSummary(analyzeRows(headers, rows));
-    };
-    reader.readAsText(file);
+    if (ext === 'xlsx' || ext === 'xls') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
+        if (jsonData.length === 0) { toast.error('Planilha vazia'); return; }
+        const headers = Object.keys(jsonData[0]);
+        const rows: ParsedRow[] = jsonData.map(row => {
+          const parsed: ParsedRow = {};
+          headers.forEach(h => { parsed[h] = String(row[h] ?? ''); });
+          return parsed;
+        });
+        processData(headers, rows, file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        const { headers, rows } = parseCSV(text);
+        processData(headers, rows, file.name);
+      };
+      reader.readAsText(file);
+    }
   };
 
   const resetFile = () => {
@@ -74,10 +104,18 @@ function BudgetImportSection() {
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = async () => {
+  const doImport = async () => {
     if (!summary || summary.validationErrors.some(e => e.row === 0)) return;
     await importBudget(csvHeaders, csvRows, clearExisting);
     resetFile();
+  };
+
+  const handleImport = () => {
+    if (clearExisting) {
+      setShowClearConfirm(true);
+    } else {
+      doImport();
+    }
   };
 
   const criticalErrors = summary?.validationErrors.filter(e => e.row === 0) ?? [];
@@ -93,7 +131,7 @@ function BudgetImportSection() {
             <Layers className="h-3.5 w-3.5" /> Importação unificada de orçamento (Grupos + Itens)
           </p>
           <p className="text-xs text-muted-foreground">
-            Suba um CSV com uma linha por item. Grupos serão detectados automaticamente.
+            Suba um CSV ou Excel (.xlsx) com uma linha por item. Grupos serão detectados automaticamente.
           </p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={downloadTemplate}>
@@ -116,7 +154,7 @@ function BudgetImportSection() {
         className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
         onClick={() => fileRef.current?.click()}
       >
-        <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFile} className="hidden" />
+        <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" onChange={handleFile} className="hidden" />
         {fileName ? (
           <div className="flex items-center justify-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
@@ -129,8 +167,8 @@ function BudgetImportSection() {
         ) : (
           <div className="space-y-2">
             <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Clique ou arraste um arquivo CSV</p>
-            <p className="text-[10px] text-muted-foreground">Separador: vírgula ou ponto-e-vírgula</p>
+            <p className="text-sm text-muted-foreground">Clique ou arraste um arquivo CSV ou Excel</p>
+            <p className="text-[10px] text-muted-foreground">Formatos: .csv, .xlsx, .xls</p>
           </div>
         )}
       </div>
@@ -248,6 +286,24 @@ function BudgetImportSection() {
           </div>
         </div>
       )}
+
+      {/* Confirmation dialog for clearing data */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar orçamento existente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os grupos e itens do orçamento atual serão excluídos permanentemente antes da nova importação. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={doImport} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, limpar e importar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
