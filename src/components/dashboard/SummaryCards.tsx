@@ -1,4 +1,4 @@
-import { DollarSign, TrendingUp, BarChart3, AlertTriangle } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, AlertTriangle, Banknote, TrendingDown } from 'lucide-react';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -7,6 +7,8 @@ interface SummaryCardsProps {
   totalConsumido: number;
   totalSaldo: number;
   pctExecucao: number;
+  totalReceita?: number;
+  margemBruta?: number;
   loading?: boolean;
 }
 
@@ -15,10 +17,12 @@ const CARDS = [
   { key: 'consumido', label: 'Consumido (Real)', icon: TrendingUp, accent: 'text-consumido', isPercent: false },
   { key: 'saldo', label: 'Saldo Futuro', icon: BarChart3, accent: 'text-saldo', isPercent: false },
   { key: 'pct', label: '% Execução', icon: AlertTriangle, accent: 'text-module-dashboard', isPercent: true },
+  { key: 'receita', label: 'Receita Prevista', icon: Banknote, accent: 'text-orcado', isPercent: false, showOnlyIfPositive: true },
+  { key: 'margem', label: 'Margem Bruta', icon: TrendingDown, accent: 'text-saldo', isPercent: false, showOnlyIfPositive: true },
 ] as const;
 
-export function SummaryCards({ totalOrcado, totalConsumido, totalSaldo, pctExecucao, loading }: SummaryCardsProps) {
-  const values: Record<string, number> = { orcado: totalOrcado, consumido: totalConsumido, saldo: totalSaldo, pct: pctExecucao };
+export function SummaryCards({ totalOrcado, totalConsumido, totalSaldo, pctExecucao, totalReceita = 0, margemBruta = 0, loading }: SummaryCardsProps) {
+  const values: Record<string, number> = { orcado: totalOrcado, consumido: totalConsumido, saldo: totalSaldo, pct: pctExecucao, receita: totalReceita, margem: margemBruta };
 
   return (
     <div className="grid grid-cols-4 gap-4">
