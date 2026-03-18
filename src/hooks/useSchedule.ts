@@ -148,11 +148,11 @@ export function useUpdateMedicao() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; data_inicio?: string; data_fim?: string; valor_planejado?: number; valor_liberado?: number; status?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
       const { error } = await supabase
-        .from('medicoes' as never)
-        .update(updates as never)
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .from('medicoes')
+        .update(updates as { data_inicio?: string; data_fim?: string; valor_planejado?: number; valor_liberado?: number; status?: string })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
