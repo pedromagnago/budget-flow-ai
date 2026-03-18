@@ -5,6 +5,7 @@ interface CurvaPoint {
   quinzena: string;
   orcadoAcum: number;
   realizadoAcum: number;
+  receitaAcum?: number;
 }
 
 interface Props {
