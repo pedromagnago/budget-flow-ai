@@ -136,8 +136,8 @@ export function useCreateMedicao() {
   return useMutation({
     mutationFn: async (input: { numero: number; data_inicio: string; data_fim: string; valor_planejado: number }) => {
       const { error } = await supabase
-        .from('medicoes' as never)
-        .insert({ ...input, company_id: companyId ?? 'default', status: 'futura', valor_liberado: 0 } as never) as unknown as { error: Error | null };
+        .from('medicoes')
+        .insert({ ...input, company_id: companyId ?? 'default', status: 'futura', valor_liberado: 0 });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
