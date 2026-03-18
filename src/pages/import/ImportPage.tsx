@@ -154,7 +154,7 @@ function BudgetImportSection() {
         className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
         onClick={() => fileRef.current?.click()}
       >
-        <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFile} className="hidden" />
+        <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" onChange={handleFile} className="hidden" />
         {fileName ? (
           <div className="flex items-center justify-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
