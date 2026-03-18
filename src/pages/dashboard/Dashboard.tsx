@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GoldenRuleBar } from '@/components/shared/GoldenRuleBar';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { BudgetVsActualChart } from '@/components/dashboard/BudgetVsActualChart';
@@ -9,6 +10,7 @@ import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FileUp } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Dashboard() {
   const {
@@ -18,6 +20,19 @@ export default function Dashboard() {
     medicoes, auditStats, latestDocs, loadingBudget,
     hasData, quinzena, companyName, municipio, estado, qtdCasas,
   } = useDashboard();
+
+  const [selectedQ, setSelectedQ] = useState<string | null>(null);
+  const activeQ = selectedQ ?? quinzena;
+
+  // Filter S-Curve and Cash Flow data up to selected quinzena
+  const qNum = parseInt(activeQ.replace(/\D/g, ''), 10) || 10;
+  const filteredCurva = curvaData.slice(0, qNum);
+  const filteredFluxo = fluxoData.slice(0, qNum);
+
+  // Available quinzenas from medicoes
+  const availableQs = medicoes.length > 0
+    ? medicoes.map((_, i) => `Q${i + 1}`)
+    : Array.from({ length: 10 }, (_, i) => `Q${i + 1}`);
 
   if (!loadingBudget && !hasData) {
     return (
