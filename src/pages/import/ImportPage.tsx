@@ -37,6 +37,7 @@ function BudgetImportSection() {
   const [fileName, setFileName] = useState('');
   const [summary, setSummary] = useState<SmartImportSummary | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { importBudget, importing, progress } = useSmartImport();
 
