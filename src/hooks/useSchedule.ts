@@ -165,9 +165,9 @@ export function useDeleteMedicao() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('medicoes' as never)
+        .from('medicoes')
         .delete()
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
