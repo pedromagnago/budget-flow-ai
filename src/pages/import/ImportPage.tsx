@@ -286,7 +286,6 @@ function BudgetImportSection() {
           </div>
         </div>
       )}
-    </div>
 
       {/* Confirmation dialog for clearing data */}
       <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
