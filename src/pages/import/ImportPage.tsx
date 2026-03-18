@@ -167,8 +167,8 @@ function BudgetImportSection() {
         ) : (
           <div className="space-y-2">
             <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Clique ou arraste um arquivo CSV</p>
-            <p className="text-[10px] text-muted-foreground">Separador: vírgula ou ponto-e-vírgula</p>
+            <p className="text-sm text-muted-foreground">Clique ou arraste um arquivo CSV ou Excel</p>
+            <p className="text-[10px] text-muted-foreground">Formatos: .csv, .xlsx, .xls</p>
           </div>
         )}
       </div>
