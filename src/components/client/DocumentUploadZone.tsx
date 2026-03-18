@@ -19,7 +19,17 @@ export function DocumentUploadZone() {
         return;
       }
       uploadMut.mutate(file, {
-        onSuccess: (r) => toast.success(`"${r.fileName}" enviado com sucesso`),
+        onSuccess: (r) => {
+          if (r.classificationStatus === 'rate_limited') {
+            toast.warning(`"${r.fileName}" enviado. Classificação IA indisponível — tente novamente em alguns minutos.`);
+          } else if (r.classificationStatus === 'no_credits') {
+            toast.warning(`"${r.fileName}" enviado. Créditos de IA insuficientes — classificação pendente.`);
+          } else if (r.classificationStatus === 'error') {
+            toast.info(`"${r.fileName}" enviado. Classificação IA será processada em breve.`);
+          } else {
+            toast.success(`"${r.fileName}" enviado — classificação IA iniciada`);
+          }
+        },
         onError: (e) => toast.error(e instanceof Error ? e.message : 'Erro no upload'),
       });
     });
@@ -56,7 +66,7 @@ export function DocumentUploadZone() {
         <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
       )}
       <p className="text-sm font-medium">
-        {uploadMut.isPending ? 'Enviando...' : 'Arraste documentos ou clique para selecionar'}
+        {uploadMut.isPending ? 'Enviando e classificando...' : 'Arraste documentos ou clique para selecionar'}
       </p>
       <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG, XML — máximo 10MB</p>
       {!uploadMut.isPending && (

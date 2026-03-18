@@ -9,6 +9,7 @@ const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 export interface UploadResult {
   documentId: string;
   fileName: string;
+  classificationStatus?: 'started' | 'error' | 'rate_limited' | 'no_credits';
 }
 
 export function validateFile(file: File): string | null {
@@ -59,10 +60,33 @@ export function useUploadDocument() {
 
       if (error) throw new Error(`Erro ao registrar documento: ${error.message}`);
 
-      return { documentId: data!.id, fileName: file.name };
+      const documentId = data!.id;
+
+      // Trigger AI classification (fire-and-forget with status tracking)
+      let classificationStatus: UploadResult['classificationStatus'] = 'started';
+      try {
+        const { error: fnError } = await supabase.functions.invoke('classify-document', {
+          body: { documento_id: documentId },
+        });
+        if (fnError) {
+          console.error('Classification invoke error:', fnError);
+          const msg = fnError.message || '';
+          if (msg.includes('429')) classificationStatus = 'rate_limited';
+          else if (msg.includes('402')) classificationStatus = 'no_credits';
+          else classificationStatus = 'error';
+        }
+      } catch (e) {
+        console.error('Classification error:', e);
+        classificationStatus = 'error';
+      }
+
+      return { documentId, fileName: file.name, classificationStatus };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['documents'] });
+      qc.invalidateQueries({ queryKey: ['audit-queue'] });
+      qc.invalidateQueries({ queryKey: ['audit-stats'] });
+      qc.invalidateQueries({ queryKey: ['sidebar-badge-audit'] });
     },
   });
 }
