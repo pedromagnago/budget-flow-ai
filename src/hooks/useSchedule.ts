@@ -18,9 +18,9 @@ export function useMedicoes() {
     queryKey: ['medicoes'],
     queryFn: async (): Promise<Medicao[]> => {
       const { data, error } = await supabase
-        .from('medicoes' as never)
-        .select('*' as never)
-        .order('numero' as never, { ascending: true } as never) as unknown as { data: Medicao[] | null; error: Error | null };
+        .from('medicoes')
+        .select('*')
+        .order('numero', { ascending: true });
 
       if (error) throw error;
       return (data ?? []).map(m => ({ ...m, valor_planejado: Number(m.valor_planejado), valor_liberado: Number(m.valor_liberado ?? 0) }));
