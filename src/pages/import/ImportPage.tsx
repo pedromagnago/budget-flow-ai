@@ -104,10 +104,18 @@ function BudgetImportSection() {
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = async () => {
+  const doImport = async () => {
     if (!summary || summary.validationErrors.some(e => e.row === 0)) return;
     await importBudget(csvHeaders, csvRows, clearExisting);
     resetFile();
+  };
+
+  const handleImport = () => {
+    if (clearExisting) {
+      setShowClearConfirm(true);
+    } else {
+      doImport();
+    }
   };
 
   const criticalErrors = summary?.validationErrors.filter(e => e.row === 0) ?? [];
