@@ -197,8 +197,20 @@ export function useSmartImport() {
 
       qc.invalidateQueries();
 
+      // Refresh materialized view after budget import
+      try {
+        await supabase.rpc('refresh_materialized_views' as never);
+      } catch (e) {
+        console.warn('Could not refresh materialized views:', e);
+      }
+
       if (errors === 0) {
-        toast.success(`${summary.grupos.length} grupos e ${success} itens importados com sucesso`);
+        toast.success(`${summary.grupos.length} grupos e ${success} itens importados com sucesso`, {
+          action: {
+            label: 'Ver Dashboard',
+            onClick: () => window.location.assign('/dashboard'),
+          },
+        });
       } else {
         toast.warning(`${success} itens importados, ${errors} com erro`);
       }

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -18,6 +18,11 @@ export function AppLayout() {
   }
 
   if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // User authenticated but no role assigned → redirect to login (shows waiting screen)
+  if (!role) {
     return <Navigate to="/login" replace />;
   }
 

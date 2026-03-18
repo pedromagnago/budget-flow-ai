@@ -6,22 +6,45 @@ import { TopDesviosTable } from '@/components/dashboard/TopDesviosTable';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { AuditMiniCard } from '@/components/dashboard/AuditMiniCard';
 import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useDashboard } from '@/hooks/useDashboard';
+import { FileUp } from 'lucide-react';
 
 export default function Dashboard() {
   const {
     totalOrcado, totalConsumido, totalSaldo, pctExecucao,
     chartGroups, topDesvios, curvaData, fluxoData,
     medicoes, auditStats, latestDocs, loadingBudget,
+    hasData, quinzena, companyName, municipio, estado, qtdCasas,
   } = useDashboard();
+
+  if (!loadingBudget && !hasData) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tighter">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Visão geral do projeto</p>
+        </div>
+        <EmptyState
+          icon={FileUp}
+          title="Nenhum orçamento importado"
+          description="Para visualizar indicadores, importe seu orçamento primeiro. O Dashboard será preenchido automaticamente."
+          actionLabel="Importar Orçamento"
+          actionHref="/import"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tighter">
-          Status do Projeto: 64 Casas — Quinzena 01
+          Status do Projeto: {qtdCasas} Casas — {quinzena}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">São Francisco de Paula/RS — Início: 09/03/2026</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {municipio && estado ? `${municipio}/${estado}` : companyName}
+        </p>
       </div>
 
       <GoldenRuleBar orcado={totalOrcado} consumido={totalConsumido} saldo={totalSaldo} />
@@ -34,12 +57,12 @@ export default function Dashboard() {
         loading={loadingBudget}
       />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BudgetVsActualChart data={chartGroups} loading={loadingBudget} />
         <SCurveChart data={curvaData} />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <TopDesviosTable data={topDesvios} />
         <CashFlowChart data={fluxoData} />
         <AuditMiniCard auditStats={auditStats} medicoes={medicoes} />

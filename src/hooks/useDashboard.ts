@@ -2,17 +2,26 @@ import { useBudgetSummary } from '@/hooks/useBudget';
 import { useAuditStats } from '@/hooks/useAuditQueue';
 import { useMedicoes } from '@/hooks/useSchedule';
 import { useDocuments } from '@/hooks/useDocuments';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export function useDashboard() {
   const { data: budgetGroups, isLoading: loadingBudget } = useBudgetSummary();
   const { data: auditStats } = useAuditStats();
   const { data: medicoes } = useMedicoes();
   const { data: documents } = useDocuments();
+  const { data: company } = useCompanyConfig();
+
+  const quinzena = company?.config?.quinzena_atual ?? 'Q1';
+  const companyName = company?.nome_fantasia || company?.razao_social || 'Projeto';
+  const municipio = company?.municipio;
+  const estado = company?.estado;
+  const qtdCasas = company?.qtd_casas ?? 64;
 
   const totalOrcado = budgetGroups?.reduce((s, g) => s + g.valor_orcado, 0) ?? 0;
   const totalConsumido = budgetGroups?.reduce((s, g) => s + g.valor_consumido, 0) ?? 0;
   const totalSaldo = totalOrcado - totalConsumido;
   const pctExecucao = totalOrcado > 0 ? totalConsumido / totalOrcado : 0;
+  const hasData = (budgetGroups ?? []).length > 0;
 
   // Top 15 groups for bar chart (exclude RECEITAS)
   const chartGroups = (budgetGroups ?? [])
@@ -65,5 +74,11 @@ export function useDashboard() {
     auditStats,
     latestDocs,
     loadingBudget,
+    hasData,
+    quinzena,
+    companyName,
+    municipio,
+    estado,
+    qtdCasas,
   };
 }
