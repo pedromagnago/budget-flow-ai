@@ -1,110 +1,81 @@
-# Guia Completo de Fluxos de Trabalho e Status do Sistema
 
-## Visão Geral
 
-O sistema é uma plataforma de **controle orçamentário para construção de 64 casas**, com 7 módulos principais.
+# Tabelas Editáveis de Medições e Cronograma
 
----
+## Diagnóstico
 
-## 1. IMPORTAÇÃO (`/import`) — Porta de Entrada dos Dados
+Hoje o sistema tem 3 problemas de usabilidade:
 
-**Como usar**:
-1. Aba **Orçamento** → Baixe template CSV → Preencha → Upload → Revise → Importar
-2. Outras abas: Serviços, Medições, Metas, Lançamentos, Categorias
+1. **Medições**: a tabela `medicoes` (8 medições com datas, valores planejados, status, valor liberado) só pode ser alimentada via importação CSV. Não há tela para visualizar/editar medições como uma planilha.
 
-| Funcionalidade | Status |
+2. **Cronograma**: mostra apenas a matriz serviços x medições com percentuais, mas não mostra os **valores planejados** por medição (R$), datas, status. Falta a visão financeira do planejado.
+
+3. **Configuração**: Serviços, Medições e Metas só entram via `/import`. Não há CRUD direto. Para um sistema essencialista, precisamos de tabelas editáveis inline.
+
+## Plano
+
+### 1. Nova aba "Medições" na página de Cronograma
+
+Adicionar tabs no `Schedule.tsx`: **Avanço Físico** (atual) | **Medições & Pagamentos**
+
+A aba "Medições & Pagamentos" será uma tabela estilo Excel com:
+
+| # | Início | Fim | Valor Planejado | Valor Liberado | % Liberado | Status | Ações |
+|---|--------|-----|-----------------|----------------|------------|--------|-------|
+| 1 | 01/01  | 15/01 | R$ 500.000 | R$ 450.000 | 90% | liberada | ✏️ |
+| 2 | 16/01  | 31/01 | R$ 600.000 | R$ 0 | 0% | em_andamento | ✏️ |
+
+- **Colunas calculadas**: `% Liberado` = valor_liberado / valor_planejado * 100, `Saldo` = planejado - liberado
+- **Linha totalizadora** no rodapé com somas
+- **Edição inline**: clicar no valor para editar (mesmo padrão do Simulador)
+- **Adicionar linha**: botão "Nova Medição" que insere row com defaults
+- **Status editável**: dropdown inline (futura, em_andamento, liberada)
+
+### 2. Tabela de Serviços editável
+
+Na mesma página, aba ou seção para gerenciar `cronograma_servicos`:
+
+| Serviço | Valor Total | Qtd Casas | Preço Unit. | Ações |
+|---------|-------------|-----------|-------------|-------|
+| Fundação | R$ 1.200.000 | 64 | R$ 18.750 | ✏️ 🗑️ |
+
+- Adicionar/remover serviços
+- Edição inline
+- Preço unitário calculado = valor_total / quantidade
+
+### 3. Cronograma mostra valores planejados
+
+No grid atual de serviços × medições, adicionar uma **linha de cabeçalho** abaixo do "M1, M2..." mostrando o valor planejado de cada medição:
+
+```
+Serviço    | M1         | M2         | M3         | ...
+           | R$ 500k    | R$ 600k    | R$ 450k    | ...
+-----------+------------+------------+------------+----
+Fundação   | 12% / 10%  | 15% / 12%  | ...
+```
+
+### 4. Hooks CRUD
+
+**`src/hooks/useSchedule.ts`** - adicionar mutations:
+- `useCreateMedicao` — insert em `medicoes`
+- `useUpdateMedicao` — update valor_planejado, valor_liberado, datas, status
+- `useDeleteMedicao` — delete
+- `useCreateServico` — insert em `cronograma_servicos`
+- `useUpdateServico` — update
+- `useDeleteServico` — delete
+
+### 5. Arquivos a editar
+
+| Arquivo | Mudança |
 |---|---|
-| Upload CSV com detecção automática de separador | ✅ |
-| Importação unificada de orçamento (grupos + itens) | ✅ |
-| Download de template CSV | ✅ |
-| Validação de campos obrigatórios | ✅ |
-| Suporte a formato numérico brasileiro | ✅ |
-| Importação de Serviços, Medições, Metas, Lançamentos, Categorias | ✅ |
-| Suporte a Excel (.xlsx) | ⏳ |
-| Histórico de importações | ⏳ |
+| `src/hooks/useSchedule.ts` | Adicionar 6 mutations CRUD (create/update/delete para medições e serviços) |
+| `src/pages/schedule/Schedule.tsx` | Adicionar Tabs, criar aba "Medições & Pagamentos" com tabela editável inline, aba "Serviços" com CRUD, e mostrar valores planejados no grid de avanço |
+| `src/components/schedule/MedicoesTable.tsx` | **Novo** — Tabela editável de medições com colunas calculadas, edição inline, adicionar/remover linhas, linha totalizadora |
+| `src/components/schedule/ServicosTable.tsx` | **Novo** — Tabela editável de serviços do cronograma |
 
-## 2. DASHBOARD (`/dashboard`) — Visão Geral
+### Resposta às perguntas
 
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Cards resumo | ✅ |
-| Gráfico Orçado vs Realizado | ✅ |
-| Curva S | ✅ |
-| Top 5 desvios | ✅ |
-| Fluxo de caixa | ✅ |
-| Mini card auditoria | ✅ |
-| Últimos documentos | ✅ |
-| Filtro por quinzena/período | ⏳ |
-| Quinzena dinâmica (hardcoded "Q01") | ⏳ |
+- **Como configurar cronograma/simulador?** Hoje só via importação CSV. Com este plano, medições e serviços poderão ser criados/editados direto na tela, sem precisar de CSV.
+- **Simulador**: já tem edição inline funcionando (valores e datas). Ele opera sobre `omie_lancamentos` com `e_previsao = true`. Esses lançamentos também podem vir via importação ou serem criados manualmente (futuro).
+- **Planejado no cronograma**: será adicionado como linha de valores sob o cabeçalho das medições.
 
-## 3. AUDITORIA (`/audit`) — Classificação IA
-
-| Funcionalidade | Status |
-|---|---|
-| Lista de classificações com filtros | ✅ |
-| Indicadores | ✅ |
-| Painel aprovar/rejeitar | ✅ |
-| Edge function classificação IA | ⏳ |
-| Upload → classificação automática | ⏳ |
-| Auto-approve por score | ⏳ |
-
-## 4. CRONOGRAMA (`/schedule`) — Avanço Físico
-
-| Funcionalidade | Status |
-|---|---|
-| Matriz serviços × medições | ✅ |
-| Modal registro de avanço | ✅ |
-| Painel de impacto | ✅ |
-| Upload de fotos | ⏳ |
-| Alertas de atraso | ⏳ |
-
-## 5. SIMULADOR (`/simulator`) — Cenários Financeiros
-
-| Funcionalidade | Status |
-|---|---|
-| Criar/excluir cenários | ✅ |
-| Editar valores e datas | ✅ |
-| Gráfico comparativo | ✅ |
-| Métricas | ✅ |
-| Exportar PDF/Excel | ⏳ |
-
-## 6. PORTAL DO CLIENTE (`/client`)
-
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Upload de documentos | ✅ |
-| Histórico de documentos | ✅ |
-| Tabela orçamento por grupo | ✅ |
-| Notificações ao cliente | ⏳ |
-
-## 7. CONFIGURAÇÕES (`/settings`)
-
-| Funcionalidade | Status |
-|---|---|
-| Editar dados da empresa | ✅ |
-| Configurar parâmetros | ✅ |
-| Categorias de-para | ✅ |
-| Convidar usuários e roles | ✅ |
-| Alertas | ✅ |
-| Sync automático Omie | ⏳ |
-
-## Ordem Recomendada de Uso
-
-1. `/settings` → Configurar empresa e usuários
-2. `/import` → Importar orçamento (CSV único)
-3. `/import` → Importar serviços + medições + metas
-4. `/dashboard` → Verificar dados nos gráficos
-5. `/schedule` → Registrar avanço físico
-6. `/client` → Cliente envia documentos
-7. `/audit` → Revisar classificações IA
-8. `/simulator` → Planejamento financeiro
-
-## Pendências Globais
-
-1. Suporte a Excel (.xlsx) na importação
-2. Edge function de classificação IA de documentos
-3. Sync automático com Omie ERP
-4. Quinzena dinâmica no Dashboard
-5. Alertas automáticos de desvio e atraso
