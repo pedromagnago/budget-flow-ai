@@ -18,9 +18,9 @@ export function useMedicoes() {
     queryKey: ['medicoes'],
     queryFn: async (): Promise<Medicao[]> => {
       const { data, error } = await supabase
-        .from('medicoes' as never)
-        .select('*' as never)
-        .order('numero' as never, { ascending: true } as never) as unknown as { data: Medicao[] | null; error: Error | null };
+        .from('medicoes')
+        .select('*')
+        .order('numero', { ascending: true });
 
       if (error) throw error;
       return (data ?? []).map(m => ({ ...m, valor_planejado: Number(m.valor_planejado), valor_liberado: Number(m.valor_liberado ?? 0) }));
@@ -42,9 +42,9 @@ export function useCronogramaServicos() {
     queryKey: ['cronograma-servicos'],
     queryFn: async (): Promise<CronogramaServico[]> => {
       const { data, error } = await supabase
-        .from('cronograma_servicos' as never)
-        .select('*' as never)
-        .order('nome' as never, { ascending: true } as never) as unknown as { data: CronogramaServico[] | null; error: Error | null };
+        .from('cronograma_servicos')
+        .select('*')
+        .order('nome', { ascending: true });
 
       if (error) throw error;
       return (data ?? []).map(s => ({ ...s, valor_total: Number(s.valor_total), preco_unitario: s.preco_unitario ? Number(s.preco_unitario) : null }));
@@ -66,8 +66,8 @@ export function useMedicoesMetas() {
     queryKey: ['medicoes-metas'],
     queryFn: async (): Promise<MedicaoMeta[]> => {
       const { data, error } = await supabase
-        .from('medicoes_metas' as never)
-        .select('*' as never) as unknown as { data: MedicaoMeta[] | null; error: Error | null };
+        .from('medicoes_metas')
+        .select('*');
 
       if (error) throw error;
       return (data ?? []).map(m => ({ ...m, meta_percentual: Number(m.meta_percentual) }));
@@ -90,9 +90,9 @@ export function useAvancoFisico() {
     queryKey: ['avanco-fisico'],
     queryFn: async (): Promise<AvancoFisico[]> => {
       const { data, error } = await supabase
-        .from('avanco_fisico' as never)
-        .select('*' as never)
-        .order('data_registro' as never, { ascending: false } as never) as unknown as { data: AvancoFisico[] | null; error: Error | null };
+        .from('avanco_fisico')
+        .select('*')
+        .order('data_registro', { ascending: false });
 
       if (error) throw error;
       return (data ?? []).map(a => ({ ...a, percentual_real: a.percentual_real ? Number(a.percentual_real) : null }));
@@ -111,13 +111,13 @@ export function useRegisterAvanco() {
       const cid = companyId ?? 'default';
 
       const { error } = await supabase
-        .from('avanco_fisico' as never)
+        .from('avanco_fisico')
         .insert({
           company_id: cid,
           servico_id: servicoId,
           casas_concluidas: casasConcluidas,
           percentual_real: percentual,
-        } as never) as unknown as { error: Error | null };
+        });
 
       if (error) throw error;
     },
@@ -136,8 +136,8 @@ export function useCreateMedicao() {
   return useMutation({
     mutationFn: async (input: { numero: number; data_inicio: string; data_fim: string; valor_planejado: number }) => {
       const { error } = await supabase
-        .from('medicoes' as never)
-        .insert({ ...input, company_id: companyId ?? 'default', status: 'futura', valor_liberado: 0 } as never) as unknown as { error: Error | null };
+        .from('medicoes')
+        .insert({ ...input, company_id: companyId ?? 'default', status: 'futura', valor_liberado: 0 });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
@@ -148,11 +148,11 @@ export function useUpdateMedicao() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; data_inicio?: string; data_fim?: string; valor_planejado?: number; valor_liberado?: number; status?: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
       const { error } = await supabase
-        .from('medicoes' as never)
-        .update(updates as never)
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .from('medicoes')
+        .update(updates as { data_inicio?: string; data_fim?: string; valor_planejado?: number; valor_liberado?: number; status?: string })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
@@ -165,9 +165,9 @@ export function useDeleteMedicao() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('medicoes' as never)
+        .from('medicoes')
         .delete()
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medicoes'] }),
@@ -185,8 +185,8 @@ export function useCreateServico() {
       const qty = input.quantidade ?? 64;
       const preco = qty > 0 ? input.valor_total / qty : 0;
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
-        .insert({ ...input, quantidade: qty, preco_unitario: preco, company_id: companyId ?? 'default' } as never) as unknown as { error: Error | null };
+        .from('cronograma_servicos')
+        .insert({ ...input, quantidade: qty, preco_unitario: preco, company_id: companyId ?? 'default' });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
@@ -197,17 +197,17 @@ export function useUpdateServico() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; nome?: string; valor_total?: number; quantidade?: number }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
       const patch: Record<string, unknown> = { ...updates };
       if (updates.valor_total !== undefined || updates.quantidade !== undefined) {
-        const vt = updates.valor_total;
-        const qt = updates.quantidade;
+        const vt = updates.valor_total as number | undefined;
+        const qt = updates.quantidade as number | undefined;
         if (vt !== undefined && qt !== undefined && qt > 0) patch.preco_unitario = vt / qt;
       }
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
-        .update(patch as never)
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .from('cronograma_servicos')
+        .update(patch as { nome?: string; valor_total?: number; quantidade?: number; preco_unitario?: number })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
@@ -220,9 +220,9 @@ export function useDeleteServico() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
+        .from('cronograma_servicos')
         .delete()
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
