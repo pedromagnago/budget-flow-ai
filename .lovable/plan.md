@@ -1,110 +1,88 @@
-# Guia Completo de Fluxos de Trabalho e Status do Sistema
 
-## Visão Geral
 
-O sistema é uma plataforma de **controle orçamentário para construção de 64 casas**, com 7 módulos principais.
+# Reorganização Essencialista por Role
 
----
+## Diagnóstico
 
-## 1. IMPORTAÇÃO (`/import`) — Porta de Entrada dos Dados
+Hoje o sistema tem 7 itens no sidebar para todos os roles, com sobreposição entre Dashboard e Portal Cliente (ambos mostram GoldenRuleBar + dados orçamentários). Conforme a Matriz de Acesso do doc original:
 
-**Como usar**:
-1. Aba **Orçamento** → Baixe template CSV → Preencha → Upload → Revise → Importar
-2. Outras abas: Serviços, Medições, Metas, Lançamentos, Categorias
+- **Cliente**: vê Portal + Dashboard resumido (na prática, precisa de UMA tela)
+- **Operador**: trabalha na Auditoria, consulta Dashboard
+- **Supervisor/Admin**: Dashboard completo + Auditoria + Config
 
-| Funcionalidade | Status |
+O princípio "menos é mais" pede: cada role vê apenas o que usa, e a home de cada um é sua ferramenta principal.
+
+## Plano
+
+### 1. Simplificar navegação por role
+
+**`src/components/layout/AppSidebar.tsx`**
+
+Reduzir para o essencial por perfil:
+
+| Item | cliente | operador | supervisor | super_admin |
+|---|---|---|---|---|
+| Documentos (ex-Portal) | ✅ home | ✅ | ✅ | ✅ |
+| Auditoria | -- | ✅ home | ✅ | ✅ |
+| Dashboard | -- | ✅ | ✅ home | ✅ home |
+| Cronograma | -- | -- | ✅ | ✅ |
+| Simulador | -- | -- | ✅ | ✅ |
+| Configurações | -- | -- | ✅ | ✅ |
+| Importação | -- | -- | ✅ | ✅ |
+
+Mudanças:
+- Renomear "Portal Cliente" para "Documentos" (neutro, faz sentido para todos os roles)
+- Cliente vê apenas: **Documentos** (sua home)
+- Operador vê: **Auditoria** (home) + Dashboard + Documentos
+- Supervisor/Admin vê tudo
+- Remover "Alertas" do sidebar (já tem o sino no header) -- reduz ruído
+
+### 2. Redirect inteligente por role
+
+**`src/lib/constants.ts`** -- já está correto:
+- cliente → `/client`
+- operador → `/audit`
+- supervisor/admin → `/dashboard`
+
+**`src/App.tsx`** -- mudar o redirect raiz `/` para usar role:
+Em vez de sempre ir para `/dashboard`, redirecionar para `ROLE_REDIRECT[role]`.
+
+### 3. Unificar a experiência do cliente
+
+**`src/pages/client/ClientPortal.tsx`**
+
+Simplificar: o cliente precisa de apenas 3 coisas nesta página:
+1. Upload de documento (ação principal, destaque)
+2. Histórico de envios com status
+3. Resumo orçamentário compacto
+
+Remover o título "Portal do Cliente" (o usuário sabe onde está). Manter a GoldenRuleBar como contexto rápido. A página já está essencialmente correta -- apenas ajustar o heading.
+
+### 4. Layout responsivo para mobile
+
+**`src/components/layout/AppLayout.tsx`**
+
+- Em mobile (< 768px), sidebar vira drawer/overlay em vez de fixed left
+- Quando fechado, conteúdo ocupa 100% da largura
+- Botão hamburger no header para abrir
+
+**`src/components/layout/AppSidebar.tsx`**
+- Aceitar prop `isMobile` para renderizar como overlay
+- Fechar ao clicar em um link (mobile)
+
+**`src/components/layout/AppHeader.tsx`**
+- Adicionar botão hamburger (menu) visível apenas em mobile
+
+### 5. Arquivos a editar
+
+| Arquivo | Mudança |
 |---|---|
-| Upload CSV com detecção automática de separador | ✅ |
-| Importação unificada de orçamento (grupos + itens) | ✅ |
-| Download de template CSV | ✅ |
-| Validação de campos obrigatórios | ✅ |
-| Suporte a formato numérico brasileiro | ✅ |
-| Importação de Serviços, Medições, Metas, Lançamentos, Categorias | ✅ |
-| Suporte a Excel (.xlsx) | ⏳ |
-| Histórico de importações | ⏳ |
+| `AppSidebar.tsx` | Atualizar NAV_ITEMS roles, renomear "Portal Cliente" → "Documentos", remover Alertas do sidebar, suporte mobile overlay |
+| `AppLayout.tsx` | Detectar mobile via hook, passar prop, sidebar como drawer em telas pequenas |
+| `AppHeader.tsx` | Botão hamburger em mobile, remover badge hardcoded "3" |
+| `constants.ts` | Sem mudança (já correto) |
+| `App.tsx` | Redirect `/` baseado em role (via componente wrapper) |
+| `ClientPortal.tsx` | Heading mais limpo |
 
-## 2. DASHBOARD (`/dashboard`) — Visão Geral
+Nenhuma página nova. Nenhuma rota nova. Apenas reorganização do que já existe para reduzir fricção.
 
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Cards resumo | ✅ |
-| Gráfico Orçado vs Realizado | ✅ |
-| Curva S | ✅ |
-| Top 5 desvios | ✅ |
-| Fluxo de caixa | ✅ |
-| Mini card auditoria | ✅ |
-| Últimos documentos | ✅ |
-| Filtro por quinzena/período | ⏳ |
-| Quinzena dinâmica (hardcoded "Q01") | ⏳ |
-
-## 3. AUDITORIA (`/audit`) — Classificação IA
-
-| Funcionalidade | Status |
-|---|---|
-| Lista de classificações com filtros | ✅ |
-| Indicadores | ✅ |
-| Painel aprovar/rejeitar | ✅ |
-| Edge function classificação IA | ⏳ |
-| Upload → classificação automática | ⏳ |
-| Auto-approve por score | ⏳ |
-
-## 4. CRONOGRAMA (`/schedule`) — Avanço Físico
-
-| Funcionalidade | Status |
-|---|---|
-| Matriz serviços × medições | ✅ |
-| Modal registro de avanço | ✅ |
-| Painel de impacto | ✅ |
-| Upload de fotos | ⏳ |
-| Alertas de atraso | ⏳ |
-
-## 5. SIMULADOR (`/simulator`) — Cenários Financeiros
-
-| Funcionalidade | Status |
-|---|---|
-| Criar/excluir cenários | ✅ |
-| Editar valores e datas | ✅ |
-| Gráfico comparativo | ✅ |
-| Métricas | ✅ |
-| Exportar PDF/Excel | ⏳ |
-
-## 6. PORTAL DO CLIENTE (`/client`)
-
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Upload de documentos | ✅ |
-| Histórico de documentos | ✅ |
-| Tabela orçamento por grupo | ✅ |
-| Notificações ao cliente | ⏳ |
-
-## 7. CONFIGURAÇÕES (`/settings`)
-
-| Funcionalidade | Status |
-|---|---|
-| Editar dados da empresa | ✅ |
-| Configurar parâmetros | ✅ |
-| Categorias de-para | ✅ |
-| Convidar usuários e roles | ✅ |
-| Alertas | ✅ |
-| Sync automático Omie | ⏳ |
-
-## Ordem Recomendada de Uso
-
-1. `/settings` → Configurar empresa e usuários
-2. `/import` → Importar orçamento (CSV único)
-3. `/import` → Importar serviços + medições + metas
-4. `/dashboard` → Verificar dados nos gráficos
-5. `/schedule` → Registrar avanço físico
-6. `/client` → Cliente envia documentos
-7. `/audit` → Revisar classificações IA
-8. `/simulator` → Planejamento financeiro
-
-## Pendências Globais
-
-1. Suporte a Excel (.xlsx) na importação
-2. Edge function de classificação IA de documentos
-3. Sync automático com Omie ERP
-4. Quinzena dinâmica no Dashboard
-5. Alertas automáticos de desvio e atraso
