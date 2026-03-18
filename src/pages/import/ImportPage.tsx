@@ -131,7 +131,7 @@ function BudgetImportSection() {
             <Layers className="h-3.5 w-3.5" /> Importação unificada de orçamento (Grupos + Itens)
           </p>
           <p className="text-xs text-muted-foreground">
-            Suba um CSV com uma linha por item. Grupos serão detectados automaticamente.
+            Suba um CSV ou Excel (.xlsx) com uma linha por item. Grupos serão detectados automaticamente.
           </p>
         </div>
         <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={downloadTemplate}>
