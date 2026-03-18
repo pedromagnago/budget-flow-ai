@@ -41,24 +41,48 @@ function BudgetImportSection() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { importBudget, importing, progress } = useSmartImport();
 
+  const processData = (headers: string[], rows: ParsedRow[], name: string) => {
+    if (headers.length === 0) {
+      toast.error('Arquivo vazio ou formato inválido');
+      return;
+    }
+    setCsvHeaders(headers);
+    setCsvRows(rows);
+    setFileName(name);
+    setSummary(analyzeRows(headers, rows));
+  };
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setFileName(file.name);
+    const ext = file.name.split('.').pop()?.toLowerCase();
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const { headers, rows } = parseCSV(text);
-      if (headers.length === 0) {
-        toast.error('Arquivo vazio ou formato inválido');
-        return;
-      }
-      setCsvHeaders(headers);
-      setCsvRows(rows);
-      setSummary(analyzeRows(headers, rows));
-    };
-    reader.readAsText(file);
+    if (ext === 'xlsx' || ext === 'xls') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
+        if (jsonData.length === 0) { toast.error('Planilha vazia'); return; }
+        const headers = Object.keys(jsonData[0]);
+        const rows: ParsedRow[] = jsonData.map(row => {
+          const parsed: ParsedRow = {};
+          headers.forEach(h => { parsed[h] = String(row[h] ?? ''); });
+          return parsed;
+        });
+        processData(headers, rows, file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        const { headers, rows } = parseCSV(text);
+        processData(headers, rows, file.name);
+      };
+      reader.readAsText(file);
+    }
   };
 
   const resetFile = () => {
