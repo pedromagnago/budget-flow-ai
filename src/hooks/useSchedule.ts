@@ -111,13 +111,13 @@ export function useRegisterAvanco() {
       const cid = companyId ?? 'default';
 
       const { error } = await supabase
-        .from('avanco_fisico' as never)
+        .from('avanco_fisico')
         .insert({
           company_id: cid,
           servico_id: servicoId,
           casas_concluidas: casasConcluidas,
           percentual_real: percentual,
-        } as never) as unknown as { error: Error | null };
+        });
 
       if (error) throw error;
     },
