@@ -197,17 +197,17 @@ export function useUpdateServico() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; nome?: string; valor_total?: number; quantidade?: number }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
       const patch: Record<string, unknown> = { ...updates };
       if (updates.valor_total !== undefined || updates.quantidade !== undefined) {
-        const vt = updates.valor_total;
-        const qt = updates.quantidade;
+        const vt = updates.valor_total as number | undefined;
+        const qt = updates.quantidade as number | undefined;
         if (vt !== undefined && qt !== undefined && qt > 0) patch.preco_unitario = vt / qt;
       }
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
-        .update(patch as never)
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .from('cronograma_servicos')
+        .update(patch as { nome?: string; valor_total?: number; quantidade?: number; preco_unitario?: number })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
