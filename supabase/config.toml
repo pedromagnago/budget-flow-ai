@@ -2,6 +2,3 @@ project_id = "fwnrmuqqwspnuybiloeh"
 
 [functions.classify-document]
 verify_jwt = false
-
-[functions.seed-audit-data]
-verify_jwt = false
