@@ -61,7 +61,7 @@ export default function Login() {
     }
   };
 
-  const { user, role, loading: authLoading } = useAuth();
+  
 
   // User logged in with a role → redirect
   if (user && role) {
