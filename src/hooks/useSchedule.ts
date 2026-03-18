@@ -220,9 +220,9 @@ export function useDeleteServico() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('cronograma_servicos' as never)
+        .from('cronograma_servicos')
         .delete()
-        .eq('id' as never, id as never) as unknown as { error: Error | null };
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cronograma-servicos'] }),
