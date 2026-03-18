@@ -66,8 +66,8 @@ export function useMedicoesMetas() {
     queryKey: ['medicoes-metas'],
     queryFn: async (): Promise<MedicaoMeta[]> => {
       const { data, error } = await supabase
-        .from('medicoes_metas' as never)
-        .select('*' as never) as unknown as { data: MedicaoMeta[] | null; error: Error | null };
+        .from('medicoes_metas')
+        .select('*');
 
       if (error) throw error;
       return (data ?? []).map(m => ({ ...m, meta_percentual: Number(m.meta_percentual) }));
