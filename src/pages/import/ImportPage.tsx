@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import {
   Upload, FileSpreadsheet, CheckCircle2, AlertTriangle,
   Layers, Calendar, BarChart3, ArrowRightLeft, DollarSign, Target,
