@@ -3,7 +3,8 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ROLE_REDIRECT } from "@/lib/constants";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import Login from "@/pages/auth/Login";
@@ -17,6 +18,13 @@ import ImportPage from "@/pages/import/ImportPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function RoleRedirect() {
+  const { role, loading } = useAuth();
+  if (loading) return null;
+  const target = (role && ROLE_REDIRECT[role]) || '/dashboard';
+  return <Navigate to={target} replace />;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -36,7 +44,7 @@ const App = () => (
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/import" element={<ImportPage />} />
             </Route>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<RoleRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

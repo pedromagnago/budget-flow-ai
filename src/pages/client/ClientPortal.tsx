@@ -13,8 +13,6 @@ export default function ClientPortal() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tighter">Portal do Cliente</h1>
-
       <GoldenRuleBar orcado={totalOrcado} consumido={totalConsumido} saldo={totalSaldo} />
 
       <DocumentUploadZone />
