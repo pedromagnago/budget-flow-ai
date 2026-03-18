@@ -90,9 +90,9 @@ export function useAvancoFisico() {
     queryKey: ['avanco-fisico'],
     queryFn: async (): Promise<AvancoFisico[]> => {
       const { data, error } = await supabase
-        .from('avanco_fisico' as never)
-        .select('*' as never)
-        .order('data_registro' as never, { ascending: false } as never) as unknown as { data: AvancoFisico[] | null; error: Error | null };
+        .from('avanco_fisico')
+        .select('*')
+        .order('data_registro', { ascending: false });
 
       if (error) throw error;
       return (data ?? []).map(a => ({ ...a, percentual_real: a.percentual_real ? Number(a.percentual_real) : null }));
