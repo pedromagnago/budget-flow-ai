@@ -89,12 +89,12 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <BudgetVsActualChart data={chartGroups} loading={loadingBudget} />
-        <SCurveChart data={curvaData} />
+        <SCurveChart data={filteredCurva} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <TopDesviosTable data={topDesvios} />
-        <CashFlowChart data={fluxoData} />
+        <CashFlowChart data={filteredFluxo} />
         <AuditMiniCard auditStats={auditStats} medicoes={medicoes} />
       </div>
 
