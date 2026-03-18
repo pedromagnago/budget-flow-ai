@@ -1,110 +1,110 @@
-# Guia Completo de Fluxos de Trabalho e Status do Sistema
 
-## Visão Geral
 
-O sistema é uma plataforma de **controle orçamentário para construção de 64 casas**, com 7 módulos principais.
+# Plano de Desenvolvimento: Correções, Conexões e Melhorias UX
+
+## Diagnóstico
+
+Após análise completa do código, identifiquei problemas em 4 categorias: **dados hardcoded**, **fluxos desconectados**, **UX fraca** e **funcionalidades pendentes críticas**.
 
 ---
 
-## 1. IMPORTAÇÃO (`/import`) — Porta de Entrada dos Dados
+## Fase 1 — Correções Urgentes
 
-**Como usar**:
-1. Aba **Orçamento** → Baixe template CSV → Preencha → Upload → Revise → Importar
-2. Outras abas: Serviços, Medições, Metas, Lançamentos, Categorias
+### 1.1 Quinzena dinâmica no Dashboard e Sidebar
+O Dashboard mostra "Quinzena 01" hardcoded e a Sidebar mostra "Q1 — Ativo" fixo. O campo `companies.config.quinzena_atual` já existe e é editável em Settings, mas não é lido pelo Dashboard nem pela Sidebar.
 
-| Funcionalidade | Status |
-|---|---|
-| Upload CSV com detecção automática de separador | ✅ |
-| Importação unificada de orçamento (grupos + itens) | ✅ |
-| Download de template CSV | ✅ |
-| Validação de campos obrigatórios | ✅ |
-| Suporte a formato numérico brasileiro | ✅ |
-| Importação de Serviços, Medições, Metas, Lançamentos, Categorias | ✅ |
-| Suporte a Excel (.xlsx) | ⏳ |
-| Histórico de importações | ⏳ |
+**Ação**: Ler `quinzena_atual` do config da empresa e usá-lo no título do Dashboard e no subtítulo da Sidebar.
 
-## 2. DASHBOARD (`/dashboard`) — Visão Geral
+### 1.2 Badge de auditoria hardcoded na Sidebar
+A Sidebar mostra `badge: 12` fixo no item Auditoria e `3` fixo em Alertas. Devem refletir dados reais.
 
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Cards resumo | ✅ |
-| Gráfico Orçado vs Realizado | ✅ |
-| Curva S | ✅ |
-| Top 5 desvios | ✅ |
-| Fluxo de caixa | ✅ |
-| Mini card auditoria | ✅ |
-| Últimos documentos | ✅ |
-| Filtro por quinzena/período | ⏳ |
-| Quinzena dinâmica (hardcoded "Q01") | ⏳ |
+**Ação**: Criar um hook leve que consulta contagem de `classificacoes_ia` pendentes e `alertas` não lidos, alimentando os badges dinamicamente.
 
-## 3. AUDITORIA (`/audit`) — Classificação IA
+### 1.3 Fallback de role no Auth
+Quando `get_user_role` retorna vazio (usuário sem role), o sistema assume `supervisor` — isso é um risco de segurança. Um usuário novo sem role atribuída ganha acesso total.
 
-| Funcionalidade | Status |
-|---|---|
-| Lista de classificações com filtros | ✅ |
-| Indicadores | ✅ |
-| Painel aprovar/rejeitar | ✅ |
-| Edge function classificação IA | ⏳ |
-| Upload → classificação automática | ⏳ |
-| Auto-approve por score | ⏳ |
+**Ação**: Mudar o fallback para `null` e redirecionar para uma tela de "Aguardando aprovação" quando o usuário não tem role.
 
-## 4. CRONOGRAMA (`/schedule`) — Avanço Físico
+---
 
-| Funcionalidade | Status |
-|---|---|
-| Matriz serviços × medições | ✅ |
-| Modal registro de avanço | ✅ |
-| Painel de impacto | ✅ |
-| Upload de fotos | ⏳ |
-| Alertas de atraso | ⏳ |
+## Fase 2 — Conexões entre Módulos
 
-## 5. SIMULADOR (`/simulator`) — Cenários Financeiros
+### 2.1 Onboarding guiado (Empty States inteligentes)
+Quando o usuário acessa o Dashboard sem dados importados, vê gráficos vazios sem orientação. Mesmo no Cronograma e Simulador.
 
-| Funcionalidade | Status |
-|---|---|
-| Criar/excluir cenários | ✅ |
-| Editar valores e datas | ✅ |
-| Gráfico comparativo | ✅ |
-| Métricas | ✅ |
-| Exportar PDF/Excel | ⏳ |
+**Ação**: Criar componentes de empty state com CTAs contextuais:
+- Dashboard vazio → "Importe seu orçamento" (link para `/import`)
+- Cronograma vazio → "Importe serviços e medições" (link para `/import` aba correta)
+- Simulador vazio → "Importe dados primeiro"
+- Auditoria vazia → "Nenhum documento para revisar"
 
-## 6. PORTAL DO CLIENTE (`/client`)
+### 2.2 Navegação contextual pós-importação
+Após importar orçamento com sucesso, o usuário não sabe para onde ir.
 
-| Funcionalidade | Status |
-|---|---|
-| Barra Regra de Ouro | ✅ |
-| Upload de documentos | ✅ |
-| Histórico de documentos | ✅ |
-| Tabela orçamento por grupo | ✅ |
-| Notificações ao cliente | ⏳ |
+**Ação**: Após importação bem-sucedida, exibir toast com ação "Ver no Dashboard" que navega para `/dashboard`.
 
-## 7. CONFIGURAÇÕES (`/settings`)
+### 2.3 Refresh automático da materialized view
+A view `v_orcado_vs_realizado` é materializada e precisa ser refreshed após importação. Atualmente não há chamada ao `refresh_materialized_views()` após import.
 
-| Funcionalidade | Status |
-|---|---|
-| Editar dados da empresa | ✅ |
-| Configurar parâmetros | ✅ |
-| Categorias de-para | ✅ |
-| Convidar usuários e roles | ✅ |
-| Alertas | ✅ |
-| Sync automático Omie | ⏳ |
+**Ação**: Após importação de orçamento, chamar `supabase.rpc('refresh_materialized_views')`.
 
-## Ordem Recomendada de Uso
+---
 
-1. `/settings` → Configurar empresa e usuários
-2. `/import` → Importar orçamento (CSV único)
-3. `/import` → Importar serviços + medições + metas
-4. `/dashboard` → Verificar dados nos gráficos
-5. `/schedule` → Registrar avanço físico
-6. `/client` → Cliente envia documentos
-7. `/audit` → Revisar classificações IA
-8. `/simulator` → Planejamento financeiro
+## Fase 3 — Melhorias de UX
 
-## Pendências Globais
+### 3.1 Responsividade do Dashboard
+Os grids usam `grid-cols-2` e `grid-cols-3` fixos, quebrando em telas menores. O viewport atual do usuário é 1067px.
 
-1. Suporte a Excel (.xlsx) na importação
-2. Edge function de classificação IA de documentos
-3. Sync automático com Omie ERP
-4. Quinzena dinâmica no Dashboard
-5. Alertas automáticos de desvio e atraso
+**Ação**: Usar breakpoints responsivos (`grid-cols-1 md:grid-cols-2`, `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).
+
+### 3.2 Stepper visual na Importação
+O fluxo de importação (upload → análise → importar) não tem indicação visual de progresso/etapas.
+
+**Ação**: Adicionar um stepper com 3 passos no topo da seção de orçamento: 1. Upload → 2. Revisão → 3. Importar.
+
+### 3.3 Confirmação antes de limpar dados
+O checkbox "Limpar orçamento existente" é perigoso e não pede confirmação.
+
+**Ação**: Ao clicar Importar com "limpar" ativo, exibir AlertDialog de confirmação.
+
+### 3.4 Feedback de estado vazio no Portal do Cliente
+Se não há documentos nem orçamento, o cliente vê componentes vazios sem orientação.
+
+**Ação**: Empty states com mensagens amigáveis para o perfil cliente.
+
+---
+
+## Fase 4 — Funcionalidade Pendente Prioritária
+
+### 4.1 Suporte a Excel (.xlsx)
+A importação aceita apenas CSV. A planilha original do usuário é Excel.
+
+**Ação**: Instalar `xlsx` (SheetJS), parsear .xlsx no browser convertendo para o mesmo formato `{headers, rows}` que o CSV parser retorna. Atualizar o `accept` do input para `.csv,.txt,.xlsx,.xls`.
+
+---
+
+## Resumo de Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `src/hooks/useDashboard.ts` | Ler `quinzena_atual` do config |
+| `src/pages/dashboard/Dashboard.tsx` | Quinzena dinâmica + grids responsivos + empty state |
+| `src/components/layout/AppSidebar.tsx` | Badges dinâmicos + quinzena dinâmica |
+| `src/hooks/useAuth.tsx` | Fallback role → null |
+| `src/pages/auth/Login.tsx` | Tela "aguardando aprovação" |
+| `src/hooks/useSmartImport.ts` | Chamar refresh_materialized_views + suporte xlsx |
+| `src/pages/import/ImportPage.tsx` | Stepper visual + confirmação limpar + toast pós-import + aceitar xlsx |
+| `src/components/shared/EmptyState.tsx` | Criar componente reutilizável de empty state |
+| `src/pages/schedule/Schedule.tsx` | Empty state |
+| `src/pages/simulator/Simulator.tsx` | Empty state |
+| `src/pages/client/ClientPortal.tsx` | Empty state |
+| `package.json` | Adicionar `xlsx` |
+
+## Ordem de Implementação
+
+1. Correções de segurança (auth fallback)
+2. Suporte a Excel + refresh materialized view
+3. Quinzena dinâmica + badges dinâmicos
+4. Empty states + onboarding
+5. Responsividade + stepper + confirmação
+
