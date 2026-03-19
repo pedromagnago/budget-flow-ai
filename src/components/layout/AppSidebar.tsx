@@ -8,6 +8,7 @@ import {
   CheckSquare,
   HardHat,
   Landmark,
+  DollarSign,
   SlidersHorizontal,
   Settings,
   ChevronLeft,
