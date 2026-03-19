@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     });
     if (depara.length) {
       contextLines.push("\n## Categorias de-para (mapeamento departamento → apropriação):");
-      depara.forEach((d: any) => contextLines.push(`- dept: ${d.departamento_omie} | cat: ${d.categoria_omie ?? "-"} | apropriação: ${d.apropriacao_excel}`));
+      depara.forEach((d: any) => contextLines.push(`- dept: ${d.departamento} | tipo: ${d.tipo_excel ?? "-"} | apropriação: ${d.apropriacao}`));
     }
 
     // --- Call Gemini ---
