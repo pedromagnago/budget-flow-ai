@@ -16,6 +16,7 @@ import {
   LogOut,
   FileUp,
   FileText,
+  FileBarChart,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
