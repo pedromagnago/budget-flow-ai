@@ -55,7 +55,7 @@ export function useCategorias() {
         .from('categoria_depara')
         .select('*')
         .eq('company_id', companyId!)
-        .order('departamento_omie');
+        .order('departamento');
       if (error) throw error;
       return data;
     },
