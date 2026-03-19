@@ -45,6 +45,7 @@ const App = () => (
               <Route path="/planejamento" element={<PlanejamentoPage />} />
               <Route path="/schedule" element={<Navigate to="/planejamento" replace />} />
               <Route path="/financeiro" element={<FinanceiroPage />} />
+              <Route path="/notificacoes" element={<NotificacoesPage />} />
               <Route path="/banking" element={<BankingPage />} />
               <Route path="/simulator" element={<Simulator />} />
               <Route path="/settings" element={<SettingsPage />} />

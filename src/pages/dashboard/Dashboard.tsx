@@ -76,6 +76,8 @@ export default function Dashboard() {
         </Select>
       </div>
 
+      <DashboardAlerts />
+
       <GoldenRuleBar orcado={totalOrcado} consumido={totalConsumido} saldo={totalSaldo} />
 
       <SummaryCards

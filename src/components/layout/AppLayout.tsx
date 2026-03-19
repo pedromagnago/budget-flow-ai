@@ -12,6 +12,16 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, role, loading } = useAuth();
   const isMobile = useIsMobile();
+  const generateNotificacoes = useGenerateNotificacoes();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Auto-generate notifications on load and every 30 min
+  useEffect(() => {
+    if (!user) return;
+    generateNotificacoes();
+    intervalRef.current = setInterval(generateNotificacoes, 30 * 60 * 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [user, generateNotificacoes]);
 
   if (loading) {
     return (
