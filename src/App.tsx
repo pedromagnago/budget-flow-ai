@@ -11,7 +11,7 @@ import Login from "@/pages/auth/Login";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import AuditQueue from "@/pages/audit/AuditQueue";
 import ClientPortal from "@/pages/client/ClientPortal";
-import Schedule from "@/pages/schedule/Schedule";
+import PlanejamentoPage from "@/pages/planejamento/PlanejamentoPage";
 import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import ImportPage from "@/pages/import/ImportPage";
