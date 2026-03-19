@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle } from 'lucide-react';
 import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico } from '@/hooks/useSchedule';
@@ -18,7 +17,6 @@ export function VisaoGeralTab() {
   const { data: avancos } = useAvancoFisico();
   const { data: servicosSituacao } = useServicosSituacao();
 
-  // Compute weighted physical progress
   const { avancoGeral, metaGeral } = useMemo(() => {
     if (!servicos?.length || !avancos?.length) return { avancoGeral: 0, metaGeral: 0 };
     const totalValor = servicos.reduce((s, sv) => s + sv.valor_total, 0);
@@ -32,38 +30,31 @@ export function VisaoGeralTab() {
 
     let weightedReal = 0;
     servicos.forEach(sv => {
-      const real = avancoMap[sv.id] ?? 0;
-      weightedReal += (real / 100) * sv.valor_total;
+      weightedReal += ((avancoMap[sv.id] ?? 0) / 100) * sv.valor_total;
     });
-
     const avancoGeral = (weightedReal / totalValor) * 100;
 
-    // Meta geral from metas
     const metaMap: Record<string, number> = {};
     (metas ?? []).forEach(m => {
       metaMap[m.servico_id] = (metaMap[m.servico_id] ?? 0) + m.meta_percentual;
     });
     let weightedMeta = 0;
     servicos.forEach(sv => {
-      const meta = metaMap[sv.id] ?? 0;
-      weightedMeta += (meta / 100) * sv.valor_total;
+      weightedMeta += ((metaMap[sv.id] ?? 0) / 100) * sv.valor_total;
     });
     const metaGeral = (weightedMeta / totalValor) * 100;
 
     return { avancoGeral, metaGeral };
   }, [servicos, avancos, metas]);
 
-  // Current medicao
   const currentMedicao = useMemo(() => {
     return (medicoes ?? []).find(m => m.status === 'em_andamento') ?? (medicoes ?? [])[0];
   }, [medicoes]);
 
-  // Financials
   const receitaPrevista = (medicoes ?? []).reduce((s, m) => s + m.valor_planejado, 0);
   const receitaRecebida = (medicoes ?? []).reduce((s, m) => s + m.valor_liberado, 0);
   const custoTotal = (servicos ?? []).reduce((s, sv) => s + sv.valor_total, 0);
 
-  // Curva S data
   const curvaData = useMemo(() => {
     if (!medicoes?.length || !servicos?.length) return [];
     const totalValor = servicos.reduce((s, sv) => s + sv.valor_total, 0);
@@ -81,13 +72,11 @@ export function VisaoGeralTab() {
     let acumReal = 0;
 
     return medicoes.map(m => {
-      // Plan: sum of weighted metas for this medicao
       let planPeriod = 0;
       let realPeriod = 0;
       servicos.forEach(sv => {
         const meta = metaMap[`${sv.id}_${m.numero}`] ?? 0;
         planPeriod += (meta / 100) * sv.valor_total;
-        // Real for this period approximation
         const totalMeta = Array.from({ length: m.numero }, (_, i) =>
           metaMap[`${sv.id}_${i + 1}`] ?? 0
         ).reduce((a, b) => a + b, 0);
@@ -107,16 +96,15 @@ export function VisaoGeralTab() {
         planejado: Math.round(acumPlan * 10) / 10,
         real: Math.round(acumReal * 10) / 10,
         valor: m.valor_planejado,
+        desvio: Math.round((acumReal - acumPlan) * 10) / 10,
       };
     });
   }, [medicoes, servicos, metas, avancos]);
 
-  // Atrasados
   const atrasados = (servicosSituacao ?? []).filter(s => s.situacao_calculada === 'atrasado');
 
   const progressColor = avancoGeral >= metaGeral ? 'bg-consumido' : avancoGeral >= metaGeral * 0.8 ? 'bg-module-dashboard' : 'bg-destructive';
 
-  // Days remaining
   const diasRestantes = currentMedicao
     ? Math.max(0, Math.ceil((new Date(currentMedicao.data_fim).getTime() - Date.now()) / 86400000))
     : 0;
@@ -142,9 +130,7 @@ export function VisaoGeralTab() {
             <p className="text-lg font-semibold">
               M{currentMedicao?.numero ?? '—'} em andamento
             </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">{diasRestantes} dias restantes</Badge>
-            </div>
+            <Badge variant="outline" className="text-xs">{diasRestantes} dias restantes</Badge>
           </CardContent>
         </Card>
 
@@ -188,12 +174,12 @@ export function VisaoGeralTab() {
                     contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
                     formatter={(value: number, name: string) => {
                       if (name === 'valor') return [formatCurrency(value), 'Valor'];
+                      if (name === 'desvio') return [`${value}%`, 'Desvio'];
                       return [`${value}%`, name === 'planejado' ? 'Planejado' : 'Real'];
                     }}
                   />
                   <Legend />
                   <Bar yAxisId="val" dataKey="valor" fill="hsl(var(--primary) / 0.2)" name="valor" radius={[4, 4, 0, 0]} />
-                  {/* Area between when real < planned */}
                   <Area yAxisId="pct" dataKey="planejado" fill="hsl(var(--destructive) / 0.08)" stroke="none" name=" " />
                   <Line yAxisId="pct" dataKey="planejado" stroke="hsl(var(--module-simulator))" strokeWidth={2} dot={{ r: 3 }} name="planejado" />
                   <Line yAxisId="pct" dataKey="real" stroke="hsl(var(--consumido))" strokeWidth={2} dot={{ r: 3 }} name="real" />
@@ -211,11 +197,12 @@ export function VisaoGeralTab() {
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4 text-destructive" />
               <p className="text-sm font-semibold">Serviços Atrasados</p>
+              <Badge variant="destructive" className="ml-auto text-[10px]">{atrasados.length}</Badge>
             </div>
             <div className="space-y-2">
               {atrasados.map(s => (
                 <div key={s.id} className="flex items-center justify-between text-sm bg-destructive/5 rounded-lg px-3 py-2">
-                  <span className="font-medium">{s.nome}</span>
+                  <span className="font-medium text-xs">{s.nome}</span>
                   <div className="flex items-center gap-3">
                     <Badge variant="destructive" className="text-[10px]">{s.dias_atraso}d atraso</Badge>
                     <span className="text-xs font-mono text-destructive">{formatCurrency(s.valor_total)}</span>
