@@ -18,6 +18,7 @@ import SettingsPage from "@/pages/settings/SettingsPage";
 import ImportPage from "@/pages/import/ImportPage";
 import FinanceiroPage from "@/pages/financeiro/FinanceiroPage";
 import NotificacoesPage from "@/pages/notificacoes/NotificacoesPage";
+import RelatoriosPage from "@/pages/relatorios/RelatoriosPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/notificacoes" element={<NotificacoesPage />} />
               <Route path="/banking" element={<BankingPage />} />
               <Route path="/simulator" element={<Simulator />} />
+              <Route path="/relatorios" element={<RelatoriosPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/import" element={<ImportPage />} />
             </Route>
