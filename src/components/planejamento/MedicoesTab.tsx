@@ -9,8 +9,9 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFoo
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatCurrency, formatDate } from '@/lib/formatters';
-import { useMedicoesFinanceiro, useLiberarMedicao, type MedicaoFinanceiro } from '@/hooks/usePlanejamento';
+import { useMedicoesFinanceiro, useLiberarMedicao, type MedicaoFinanceiro, type TriggerResult } from '@/hooks/usePlanejamento';
 import { useCreateMedicao, useUpdateMedicao, useDeleteMedicao, useMedicoesMetas, useCronogramaServicos } from '@/hooks/useSchedule';
+import { ImpactBanner } from './ImpactBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,6 +48,7 @@ export function MedicoesTab() {
   const [metaValues, setMetaValues] = useState<Record<string, string>>({});
   const [newRow, setNewRow] = useState({ data_inicio: '', data_fim: '', valor_planejado: '' });
   const [liberarForm, setLiberarForm] = useState({ valor: '', data: new Date().toISOString().split('T')[0], obs: '' });
+  const [triggerResult, setTriggerResult] = useState<TriggerResult | null>(null);
 
   const createMut = useCreateMedicao();
   const updateMut = useUpdateMedicao();
@@ -57,7 +59,6 @@ export function MedicoesTab() {
   const nextNumero = list.length > 0 ? Math.max(...list.map(m => m.numero)) + 1 : 1;
   const totals = list.reduce((acc, m) => ({ plan: acc.plan + m.valor_planejado, lib: acc.lib + m.valor_liberado }), { plan: 0, lib: 0 });
 
-  // Build metas for the drawer
   const metasForDrawer = useMemo(() => {
     if (metasDrawer === null || !servicos?.length) return [];
     const metaMap: Record<string, number> = {};
@@ -79,11 +80,7 @@ export function MedicoesTab() {
   }, [metasForDrawer, metaValues]);
 
   function openMetasDrawer(numero: number) {
-    const map: Record<string, string> = {};
-    metasForDrawer.forEach(m => { map[m.servico_id] = String(m.meta); });
-    // Need to recalc after state updates
     setMetasDrawer(numero);
-    // Pre-fill after a tick
     setTimeout(() => {
       const metaMap: Record<string, string> = {};
       (metas ?? []).forEach(m => {
@@ -148,16 +145,22 @@ export function MedicoesTab() {
     if (!liberarModal) return;
     const valor = parseFloat(liberarForm.valor) || liberarModal.valor_planejado;
     try {
-      await liberarMut.mutateAsync({
+      const result = await liberarMut.mutateAsync({
         medicaoId: liberarModal.id,
         valorLiberado: valor,
         dataLiberacao: liberarForm.data,
         observacao: liberarForm.obs,
         medicaoNumero: liberarModal.numero,
+        valorPlanejado: liberarModal.valor_planejado,
         lancamentoExistenteId: liberarModal.lancamento_receita_id,
       });
+
       toast.success(`Medição M${liberarModal.numero} liberada — lançamento de receita criado em A Receber`);
       setLiberarModal(null);
+
+      if (result.type !== 'none') {
+        setTriggerResult(result);
+      }
     } catch { toast.error('Erro ao liberar'); }
   }
 
@@ -187,6 +190,13 @@ export function MedicoesTab() {
 
   return (
     <>
+      {/* Trigger banner */}
+      {triggerResult && triggerResult.type !== 'none' && (
+        <div className="mb-4">
+          <ImpactBanner result={triggerResult} onDismiss={() => setTriggerResult(null)} />
+        </div>
+      )}
+
       <div className="bg-card border rounded-xl shadow-card overflow-auto">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold text-sm">Medições</h3>
@@ -226,21 +236,15 @@ export function MedicoesTab() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-0.5">
-                    <Button
-                      variant="ghost" size="icon" className="h-7 w-7 text-primary"
-                      title="Definir metas" onClick={() => openMetasDrawer(m.numero)}
-                    >
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" title="Definir metas" onClick={() => openMetasDrawer(m.numero)}>
                       <Target className="h-3.5 w-3.5" />
                     </Button>
                     {(m.status === 'em_andamento' || m.status_financeiro === 'em_andamento') && (
-                      <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-consumido"
-                        title="Liberar medição"
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-consumido" title="Liberar medição"
                         onClick={() => {
                           setLiberarForm({ valor: String(m.valor_planejado), data: new Date().toISOString().split('T')[0], obs: '' });
                           setLiberarModal(m);
-                        }}
-                      >
+                        }}>
                         <Unlock className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -299,7 +303,7 @@ export function MedicoesTab() {
                 <Textarea value={liberarForm.obs} onChange={e => setLiberarForm({ ...liberarForm, obs: e.target.value })} rows={2} />
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Ao confirmar, um lançamento de receita será criado automaticamente em A Receber com vencimento em 15 dias.
+                Ao confirmar, um lançamento de receita será criado automaticamente em A Receber com vencimento configurável (padrão: 15 dias).
               </p>
             </div>
             <DialogFooter>
@@ -333,9 +337,7 @@ export function MedicoesTab() {
                       className="h-7 w-20 text-xs text-right"
                       value={metaValues[m.servico_id] ?? String(m.meta)}
                       onChange={e => setMetaValues(prev => ({ ...prev, [m.servico_id]: e.target.value }))}
-                      min={0}
-                      max={100}
-                      step={0.1}
+                      min={0} max={100} step={0.1}
                     />
                     <span className="text-xs text-muted-foreground">%</span>
                   </div>

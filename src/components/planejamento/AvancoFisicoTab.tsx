@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
-import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico, useRegisterAvanco } from '@/hooks/useSchedule';
+import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico } from '@/hooks/useSchedule';
+import { useSaveAvancoWithTriggers, type TriggerResult } from '@/hooks/usePlanejamento';
+import { ImpactBanner } from './ImpactBanner';
 import { formatCurrencyCompact } from '@/lib/formatters';
 import { toast } from 'sonner';
 
@@ -25,6 +27,10 @@ interface DrawerState {
   servicoNome: string;
   medicaoNumero: number;
   qtdTotal: number;
+  grupoId: string | null;
+  dataFimPlan: string | null;
+  dataFimReal: string | null;
+  valorTotal: number;
 }
 
 export function AvancoFisicoTab() {
@@ -32,11 +38,12 @@ export function AvancoFisicoTab() {
   const { data: medicoes, isLoading: lm } = useMedicoes();
   const { data: metas } = useMedicoesMetas();
   const { data: avancos } = useAvancoFisico();
-  const registerMut = useRegisterAvanco();
+  const saveAvancoMut = useSaveAvancoWithTriggers();
 
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [triggerResult, setTriggerResult] = useState<TriggerResult | null>(null);
   const [drawerForm, setDrawerForm] = useState({
     casas: 0, percentual: '0', usePercentual: false,
     data: new Date().toISOString().split('T')[0],
@@ -83,8 +90,8 @@ export function AvancoFisicoTab() {
     return list;
   }, [servicos, search, statusFilter, avancoMap, metaMap, medicaoNumbers]);
 
-  function openDrawer(state: DrawerState) {
-    setDrawer(state);
+  function openDrawer(servicoId: string, servicoNome: string, medicaoNumero: number, qtdTotal: number, grupoId: string | null, dataFimPlan: string | null, dataFimReal: string | null, valorTotal: number) {
+    setDrawer({ servicoId, servicoNome, medicaoNumero, qtdTotal, grupoId, dataFimPlan, dataFimReal, valorTotal });
     setDrawerForm({
       casas: 0, percentual: '0', usePercentual: false,
       data: new Date().toISOString().split('T')[0],
@@ -104,13 +111,24 @@ export function AvancoFisicoTab() {
     }
 
     try {
-      await registerMut.mutateAsync({
+      const result = await saveAvancoMut.mutateAsync({
         servicoId: drawer.servicoId,
+        servicoNome: drawer.servicoNome,
+        medicaoNumero: drawer.medicaoNumero,
         casasConcluidas: casas,
         qtdTotal: drawer.qtdTotal,
+        grupoId: drawer.grupoId,
+        dataFimPlan: drawer.dataFimPlan,
+        dataFimReal: drawer.dataFimReal,
+        valorTotal: drawer.valorTotal,
       });
+
       toast.success(`Avanço registrado: ${casas}/${drawer.qtdTotal} casas (${((casas / drawer.qtdTotal) * 100).toFixed(1)}%)`);
       setDrawer(null);
+
+      if (result.type !== 'none') {
+        setTriggerResult(result);
+      }
     } catch {
       toast.error('Erro ao registrar avanço');
     }
@@ -120,6 +138,25 @@ export function AvancoFisicoTab() {
 
   return (
     <div className="space-y-4">
+      {/* Trigger banner */}
+      {triggerResult && triggerResult.type !== 'none' && (
+        <ImpactBanner
+          result={triggerResult}
+          onDismiss={() => setTriggerResult(null)}
+          onNavigateImpacto={() => {
+            setTriggerResult(null);
+            // Navigate to impacto tab - parent handles this via URL or tab state
+            const tabTrigger = document.querySelector('[value="impacto"]') as HTMLElement;
+            tabTrigger?.click();
+          }}
+          onRequestEarlyMeasurement={() => {
+            setTriggerResult(null);
+            const tabTrigger = document.querySelector('[value="medicoes"]') as HTMLElement;
+            tabTrigger?.click();
+          }}
+        />
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <Input className="h-8 w-64 text-xs" placeholder="Buscar serviço..." value={search} onChange={e => setSearch(e.target.value)} />
@@ -183,12 +220,16 @@ export function AvancoFisicoTab() {
                       <td key={n} className="py-1 px-2 text-center">
                         <div
                           className={cn('rounded px-2 py-1 text-[11px] font-mono cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all', getCellColor(meta, cellReal))}
-                          onClick={() => openDrawer({
-                            servicoId: servico.id,
-                            servicoNome: servico.nome,
-                            medicaoNumero: n,
-                            qtdTotal: servico.quantidade ?? 64,
-                          })}
+                          onClick={() => openDrawer(
+                            servico.id,
+                            servico.nome,
+                            n,
+                            servico.quantidade ?? 64,
+                            null, // grupoId not available on CronogramaServico, but available on ServicoSituacao
+                            null,
+                            null,
+                            servico.valor_total,
+                          )}
                         >
                           {cellReal.toFixed(0)}% / {meta.toFixed(0)}%
                         </div>
@@ -273,7 +314,7 @@ export function AvancoFisicoTab() {
                 <Textarea value={drawerForm.observacao} onChange={e => setDrawerForm(f => ({ ...f, observacao: e.target.value }))} rows={3} placeholder="Detalhes do avanço..." />
               </div>
 
-              <Button className="w-full" onClick={handleSaveAvanco} disabled={registerMut.isPending}>
+              <Button className="w-full" onClick={handleSaveAvanco} disabled={saveAvancoMut.isPending}>
                 Salvar Avanço
               </Button>
             </div>
