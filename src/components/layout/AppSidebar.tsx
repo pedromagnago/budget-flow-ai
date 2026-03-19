@@ -40,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { title: 'Financeiro', href: '/financeiro', icon: DollarSign, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Bancário', href: '/banking', icon: Landmark, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
+  { title: 'Relatórios', href: '/relatorios', icon: FileBarChart, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'] },
   { title: 'Importação', href: '/import', icon: FileUp, roles: ['supervisor', 'super_admin'] },
 ];
