@@ -98,8 +98,8 @@ export default function SettingsPage() {
     };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
-  const saveOmieConfig = () => {
-    const newConfig: CompanyConfig = { ...cfg, dias_sync_omie: syncDias };
+  const saveQuinzenaConfig = (v: string) => {
+    const newConfig = { ...cfg, quinzena_atual: v };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
 
