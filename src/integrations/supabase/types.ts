@@ -236,6 +236,73 @@ export type Database = {
           },
         ]
       }
+      avancos_obra: {
+        Row: {
+          casas_concluidas: number
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          data_registro: string
+          foto_urls: string[] | null
+          id: string
+          medicao_numero: number
+          observacao: string | null
+          percentual: number
+          responsavel: string | null
+          servico_id: string
+        }
+        Insert: {
+          casas_concluidas?: number
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          data_registro?: string
+          foto_urls?: string[] | null
+          id?: string
+          medicao_numero: number
+          observacao?: string | null
+          percentual: number
+          responsavel?: string | null
+          servico_id: string
+        }
+        Update: {
+          casas_concluidas?: number
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          data_registro?: string
+          foto_urls?: string[] | null
+          id?: string
+          medicao_numero?: number
+          observacao?: string | null
+          percentual?: number
+          responsavel?: string | null
+          servico_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avancos_obra_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_obra_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_obra_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categoria_depara: {
         Row: {
           apropriacao: string
@@ -601,6 +668,7 @@ export type Database = {
       }
       cronograma_servicos: {
         Row: {
+          ativo: boolean | null
           codigo: string | null
           company_id: string
           created_at: string | null
@@ -608,9 +676,12 @@ export type Database = {
           data_fim_real: string | null
           data_inicio_plan: string | null
           data_inicio_real: string | null
+          depende_de: string | null
+          descricao: string | null
           grupo_id: string | null
           id: string
           nome: string
+          observacao: string | null
           ordem: number | null
           preco_unitario: number | null
           quantidade: number | null
@@ -620,6 +691,7 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          ativo?: boolean | null
           codigo?: string | null
           company_id: string
           created_at?: string | null
@@ -627,9 +699,12 @@ export type Database = {
           data_fim_real?: string | null
           data_inicio_plan?: string | null
           data_inicio_real?: string | null
+          depende_de?: string | null
+          descricao?: string | null
           grupo_id?: string | null
           id?: string
           nome: string
+          observacao?: string | null
           ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
@@ -639,6 +714,7 @@ export type Database = {
           valor_total: number
         }
         Update: {
+          ativo?: boolean | null
           codigo?: string | null
           company_id?: string
           created_at?: string | null
@@ -646,9 +722,12 @@ export type Database = {
           data_fim_real?: string | null
           data_inicio_plan?: string | null
           data_inicio_real?: string | null
+          depende_de?: string | null
+          descricao?: string | null
           grupo_id?: string | null
           id?: string
           nome?: string
+          observacao?: string | null
           ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
@@ -663,6 +742,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_depende_de_fkey"
+            columns: ["depende_de"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_depende_de_fkey"
+            columns: ["depende_de"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
           {
@@ -741,12 +834,15 @@ export type Database = {
           desvio_percentual: number | null
           id: string
           impacto_financeiro: number | null
+          lancamento_id: string | null
           medicao_id: string | null
+          medicao_numero: number | null
           resolvido: boolean | null
           resolvido_em: string | null
           resolvido_por: string | null
           servico_id: string | null
           tipo: string
+          valor_impacto: number | null
         }
         Insert: {
           acao_tomada?: string | null
@@ -757,12 +853,15 @@ export type Database = {
           desvio_percentual?: number | null
           id?: string
           impacto_financeiro?: number | null
+          lancamento_id?: string | null
           medicao_id?: string | null
+          medicao_numero?: number | null
           resolvido?: boolean | null
           resolvido_em?: string | null
           resolvido_por?: string | null
           servico_id?: string | null
           tipo: string
+          valor_impacto?: number | null
         }
         Update: {
           acao_tomada?: string | null
@@ -773,12 +872,15 @@ export type Database = {
           desvio_percentual?: number | null
           id?: string
           impacto_financeiro?: number | null
+          lancamento_id?: string | null
           medicao_id?: string | null
+          medicao_numero?: number | null
           resolvido?: boolean | null
           resolvido_em?: string | null
           resolvido_por?: string | null
           servico_id?: string | null
           tipo?: string
+          valor_impacto?: number | null
         }
         Relationships: [
           {
@@ -786,6 +888,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
             referencedColumns: ["id"]
           },
           {
@@ -964,6 +1080,8 @@ export type Database = {
           lancamento_receita_id: string | null
           numero: number
           observacoes: string | null
+          percentual_fisico_meta: number | null
+          percentual_fisico_real: number | null
           previsao_liberacao: string | null
           status: string | null
           updated_at: string | null
@@ -981,6 +1099,8 @@ export type Database = {
           lancamento_receita_id?: string | null
           numero: number
           observacoes?: string | null
+          percentual_fisico_meta?: number | null
+          percentual_fisico_real?: number | null
           previsao_liberacao?: string | null
           status?: string | null
           updated_at?: string | null
@@ -998,6 +1118,8 @@ export type Database = {
           lancamento_receita_id?: string | null
           numero?: number
           observacoes?: string | null
+          percentual_fisico_meta?: number | null
+          percentual_fisico_real?: number | null
           previsao_liberacao?: string | null
           status?: string | null
           updated_at?: string | null
@@ -1030,34 +1152,52 @@ export type Database = {
       }
       medicoes_metas: {
         Row: {
+          casas_concluidas: number | null
           company_id: string
           created_at: string | null
+          data_registro: string | null
           id: string
           medicao_numero: number
           meta_casas: number | null
           meta_percentual: number
+          observacao: string | null
+          percentual_real: number | null
+          registrado_por: string | null
           servico_id: string
           valor_liberado: number | null
+          valor_previsto: number | null
         }
         Insert: {
+          casas_concluidas?: number | null
           company_id: string
           created_at?: string | null
+          data_registro?: string | null
           id?: string
           medicao_numero: number
           meta_casas?: number | null
           meta_percentual: number
+          observacao?: string | null
+          percentual_real?: number | null
+          registrado_por?: string | null
           servico_id: string
           valor_liberado?: number | null
+          valor_previsto?: number | null
         }
         Update: {
+          casas_concluidas?: number | null
           company_id?: string
           created_at?: string | null
+          data_registro?: string | null
           id?: string
           medicao_numero?: number
           meta_casas?: number | null
           meta_percentual?: number
+          observacao?: string | null
+          percentual_real?: number | null
+          registrado_por?: string | null
           servico_id?: string
           valor_liberado?: number | null
+          valor_previsto?: number | null
         }
         Relationships: [
           {
