@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
 export function ServicosTab() {
   const { data: servicos, isLoading } = useServicosSituacao();
   const { data: avancos } = useAvancoFisico();
-  const { data: grupos } = useBudget();
+  const { data: grupos } = useBudgetSummary();
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const [adding, setAdding] = useState(false);
   const [newRow, setNewRow] = useState({
