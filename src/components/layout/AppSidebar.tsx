@@ -6,7 +6,7 @@ import { useSidebarBadges } from '@/hooks/useSidebarBadges';
 import {
   BarChart3,
   CheckSquare,
-  Calendar,
+  HardHat,
   SlidersHorizontal,
   Settings,
   ChevronLeft,
