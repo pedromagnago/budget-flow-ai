@@ -9,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Save, Plus, Eye, EyeOff, CheckCircle2, AlertTriangle, Users, Layers, Bell, UserPlus, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users } from 'lucide-react';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
   useUserRoles, useInviteUser, useUpdateUserRole,
-  useAlertas, useMarkAlertaRead,
 } from '@/hooks/useSettings';
 import { useBudgetSummary } from '@/hooks/useBudget';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
@@ -29,6 +28,11 @@ interface CompanyConfig {
   incluir_exemplos_correcao?: boolean;
   portal_habilitado?: boolean;
   widgets_dashboard?: string[];
+  notif_vencimento_dia?: boolean;
+  notif_vencimento_semana?: boolean;
+  notif_desvio_orcamento?: boolean;
+  notif_desvio_percentual?: number;
+  notif_conciliacao_pendente?: boolean;
 }
 
 function getConfig(config: Json | null): CompanyConfig {
@@ -46,8 +50,6 @@ export default function SettingsPage() {
   const inviteUser = useInviteUser();
   const updateUserRole = useUpdateUserRole();
   const { data: budgetGroups, isLoading: loadingBudget } = useBudgetSummary();
-  const { data: alertas, isLoading: loadingAlertas } = useAlertas();
-  const markRead = useMarkAlertaRead();
 
   // ── Project form state ──
   const [projectForm, setProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64, status: 'ativo' });
@@ -66,6 +68,13 @@ export default function SettingsPage() {
   const cfg = getConfig(company?.config ?? null);
   const [iaConfig, setIaConfig] = useState({ score_min: 40, score_high: 85, score_auto: 95, auto_active: false, include_examples: true });
   const [desvioLimiar, setDesvioLimiar] = useState(10);
+  const [notifConfig, setNotifConfig] = useState({
+    notif_vencimento_dia: true,
+    notif_vencimento_semana: true,
+    notif_desvio_orcamento: true,
+    notif_desvio_percentual: 10,
+    notif_conciliacao_pendente: true,
+  });
 
   useEffect(() => {
     if (company) {
@@ -77,6 +86,13 @@ export default function SettingsPage() {
         include_examples: cfg.incluir_exemplos_correcao ?? true,
       });
       setDesvioLimiar((cfg.limiar_desvio_alerta ?? 0.10) * 100);
+      setNotifConfig({
+        notif_vencimento_dia: cfg.notif_vencimento_dia ?? true,
+        notif_vencimento_semana: cfg.notif_vencimento_semana ?? true,
+        notif_desvio_orcamento: cfg.notif_desvio_orcamento ?? true,
+        notif_desvio_percentual: (cfg.notif_desvio_percentual ?? 10),
+        notif_conciliacao_pendente: cfg.notif_conciliacao_pendente ?? true,
+      });
     }
   }, [company]);
 
@@ -277,46 +293,46 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
-        {/* ── Alertas ── */}
+        {/* ── Alertas e Notificações ── */}
         <TabsContent value="alerts">
-          <SectionCard title="Alertas do Sistema" icon={Bell}>
-            {loadingAlertas ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : (alertas ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum alerta registrado.</p>
-            ) : (
-              <div className="max-h-[400px] overflow-auto space-y-2">
-                {(alertas ?? []).map(a => (
-                  <div key={a.id} className={`flex items-start gap-3 p-3 rounded-lg border ${a.lido ? 'opacity-60' : ''}`}>
-                    {a.severidade === 'alta' || a.severidade === 'critica' ? (
-                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">{a.titulo}</p>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {a.tipo}
-                        </Badge>
-                        {a.severidade && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${a.severidade === 'critica' ? 'bg-destructive/10 text-destructive' : a.severidade === 'alta' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-                            {a.severidade}
-                          </span>
-                        )}
-                      </div>
-                      {a.mensagem && <p className="text-xs text-muted-foreground mt-0.5">{a.mensagem}</p>}
-                      <p className="text-[10px] text-muted-foreground mt-1">{formatDateTime(a.created_at!)}</p>
-                    </div>
-                    {!a.lido && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => markRead.mutate(a.id)}>
-                        Marcar lido
-                      </Button>
-                    )}
-                  </div>
-                ))}
+          <SectionCard title="Alertas e Notificações" icon={Bell}>
+            <div className="space-y-5 max-w-md">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre vencimentos do dia</Label>
+                <Switch checked={notifConfig.notif_vencimento_dia} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_vencimento_dia: v }))} />
               </div>
-            )}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre vencimentos da semana</Label>
+                <Switch checked={notifConfig.notif_vencimento_semana} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_vencimento_semana: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs">Alertar quando desvio orçamentário superar</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number"
+                      value={notifConfig.notif_desvio_percentual}
+                      onChange={e => setNotifConfig(p => ({ ...p, notif_desvio_percentual: Number(e.target.value) || 0 }))}
+                      className="h-7 w-20 text-xs"
+                      min={1}
+                      max={100}
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                </div>
+                <Switch checked={notifConfig.notif_desvio_orcamento} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_desvio_orcamento: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre conciliações pendentes</Label>
+                <Switch checked={notifConfig.notif_conciliacao_pendente} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_conciliacao_pendente: v }))} />
+              </div>
+              <Button size="sm" onClick={() => {
+                const newConfig: CompanyConfig = { ...cfg, ...notifConfig };
+                updateCompany.mutate({ config: newConfig as unknown as Json });
+              }} disabled={updateCompany.isPending}>
+                <Save className="h-3.5 w-3.5 mr-2" /> Salvar Preferências
+              </Button>
+            </div>
           </SectionCard>
         </TabsContent>
 

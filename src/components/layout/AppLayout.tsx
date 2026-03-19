@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { cn } from '@/lib/utils';
+import { useGenerateNotificacoes } from '@/hooks/useNotificacoes';
 
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, role, loading } = useAuth();
   const isMobile = useIsMobile();
+  const generateNotificacoes = useGenerateNotificacoes();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+
+  // Auto-generate notifications on load and every 30 min
+  useEffect(() => {
+    if (!user) return;
+    generateNotificacoes();
+    intervalRef.current = setInterval(generateNotificacoes, 30 * 60 * 1000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [user, generateNotificacoes]);
 
   if (loading) {
     return (

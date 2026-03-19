@@ -7,6 +7,7 @@ import { TopDesviosTable } from '@/components/dashboard/TopDesviosTable';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { AuditMiniCard } from '@/components/dashboard/AuditMiniCard';
 import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
+import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FileUp } from 'lucide-react';
@@ -74,6 +75,8 @@ export default function Dashboard() {
           </SelectContent>
         </Select>
       </div>
+
+      <DashboardAlerts />
 
       <GoldenRuleBar orcado={totalOrcado} consumido={totalConsumido} saldo={totalSaldo} />
 
