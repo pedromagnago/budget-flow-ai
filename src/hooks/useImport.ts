@@ -10,7 +10,7 @@ export type ImportTarget =
   | 'cronograma_servicos'
   | 'medicoes'
   | 'medicoes_metas'
-  | 'omie_lancamentos'
+  | 'lancamentos'
   | 'categoria_depara';
 
 export interface ParsedRow {
