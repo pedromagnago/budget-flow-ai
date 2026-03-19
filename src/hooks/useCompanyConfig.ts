@@ -7,7 +7,7 @@ interface CompanyConfig {
   quinzena_atual: string;
   limiar_desvio_alerta: number;
   score_minimo_auto_approve: number;
-  dias_sync_omie: number;
+  
 }
 
 interface CompanyInfo {
@@ -24,7 +24,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
   quinzena_atual: 'Q1',
   limiar_desvio_alerta: 0.10,
   score_minimo_auto_approve: 0.95,
-  dias_sync_omie: 1,
+  
 };
 
 export function useCompanyConfig() {

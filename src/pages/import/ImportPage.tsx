@@ -26,7 +26,7 @@ const OTHER_TABS: { value: OtherTarget; label: string; icon: React.ElementType }
   { value: 'cronograma_servicos', label: 'Serviços', icon: Calendar },
   { value: 'medicoes', label: 'Medições', icon: BarChart3 },
   { value: 'medicoes_metas', label: 'Metas', icon: Target },
-  { value: 'omie_lancamentos', label: 'Lançamentos', icon: DollarSign },
+  { value: 'lancamentos', label: 'Lançamentos', icon: DollarSign },
   { value: 'categoria_depara', label: 'Categorias', icon: ArrowRightLeft },
 ];
 

@@ -22,7 +22,6 @@ import { STATUS_COLORS } from '@/lib/constants';
 import type { Json } from '@/integrations/supabase/types';
 
 interface CompanyConfig {
-  dias_sync_omie?: number;
   quinzena_atual?: string;
   limiar_desvio_alerta?: number;
   score_minimo_auto_approve?: number;
@@ -66,7 +65,6 @@ export default function SettingsPage() {
   // ── Config state ──
   const cfg = getConfig(company?.config ?? null);
   const [iaConfig, setIaConfig] = useState({ score_min: 40, score_high: 85, score_auto: 95, auto_active: false, include_examples: true });
-  const [syncDias, setSyncDias] = useState(1);
   const [desvioLimiar, setDesvioLimiar] = useState(10);
 
   useEffect(() => {
@@ -78,13 +76,12 @@ export default function SettingsPage() {
         auto_active: cfg.auto_approve_ativo ?? false,
         include_examples: cfg.incluir_exemplos_correcao ?? true,
       });
-      setSyncDias(cfg.dias_sync_omie ?? 1);
       setDesvioLimiar((cfg.limiar_desvio_alerta ?? 0.10) * 100);
     }
   }, [company]);
 
   // ── New category ──
-  const [newCat, setNewCat] = useState({ apropriacao_excel: '', departamento_omie: '', categoria_omie: '' });
+  const [newCat, setNewCat] = useState({ apropriacao: '', departamento: '' });
   const [newUser, setNewUser] = useState({ email: '', password: '', role: 'operador' });
   const [showPassword, setShowPassword] = useState(false);
   const saveProject = () => updateCompany.mutate(projectForm);
@@ -94,13 +91,12 @@ export default function SettingsPage() {
       score_minimo_auto_approve: iaConfig.score_auto / 100,
       auto_approve_ativo: iaConfig.auto_active,
       incluir_exemplos_correcao: iaConfig.include_examples,
-      dias_sync_omie: syncDias,
       limiar_desvio_alerta: desvioLimiar / 100,
     };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
-  const saveOmieConfig = () => {
-    const newConfig: CompanyConfig = { ...cfg, dias_sync_omie: syncDias };
+  const saveQuinzenaConfig = (v: string) => {
+    const newConfig = { ...cfg, quinzena_atual: v };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
 
@@ -121,9 +117,8 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold tracking-tighter">Configurações</h1>
 
       <Tabs defaultValue="project" className="space-y-4">
-        <TabsList className="bg-muted/50 h-9 flex-wrap">
+         <TabsList className="bg-muted/50 h-9 flex-wrap">
           <TabsTrigger value="project" className="text-xs">Projeto</TabsTrigger>
-          <TabsTrigger value="omie" className="text-xs">Omie</TabsTrigger>
           <TabsTrigger value="categories" className="text-xs">Categorias</TabsTrigger>
           <TabsTrigger value="ia" className="text-xs">IA</TabsTrigger>
           <TabsTrigger value="alerts" className="text-xs">Alertas</TabsTrigger>
@@ -166,27 +161,9 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <Button size="sm" onClick={saveProject} disabled={updateCompany.isPending}>
-              <Save className="h-3.5 w-3.5 mr-2" /> Salvar
-            </Button>
-          </SectionCard>
-        </TabsContent>
-
-        {/* ── Omie ── */}
-        <TabsContent value="omie">
-          <SectionCard title="Integração Omie">
-            <div className="space-y-4 max-w-sm">
-              <div className="space-y-2">
-                <Label className="text-xs">Frequência de Sync (dias)</Label>
-                <Input type="number" min={1} max={30} value={syncDias} onChange={e => setSyncDias(parseInt(e.target.value) || 1)} className="h-9 text-sm font-mono" />
-              </div>
               <div className="space-y-2">
                 <Label className="text-xs">Quinzena Atual</Label>
-                <Select defaultValue={cfg.quinzena_atual ?? 'Q1'} onValueChange={v => {
-                  const newConfig = { ...cfg, quinzena_atual: v };
-                  updateCompany.mutate({ config: newConfig as unknown as Json });
-                }}>
+                <Select defaultValue={cfg.quinzena_atual ?? 'Q1'} onValueChange={saveQuinzenaConfig}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 10 }, (_, i) => (
@@ -195,19 +172,16 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Para configurar App Key e App Secret do Omie, utilize os secrets do projeto Supabase.
-              </p>
-              <Button size="sm" onClick={saveOmieConfig} disabled={updateCompany.isPending}>
-                <Save className="h-3.5 w-3.5 mr-2" /> Salvar
-              </Button>
             </div>
+            <Button size="sm" onClick={saveProject} disabled={updateCompany.isPending}>
+              <Save className="h-3.5 w-3.5 mr-2" /> Salvar
+            </Button>
           </SectionCard>
         </TabsContent>
 
         {/* ── Categorias ── */}
         <TabsContent value="categories">
-          <SectionCard title="De-Para de Categorias" icon={Layers}>
+          <SectionCard title="Mapeamento de Categorias" icon={Layers}>
             {loadingCats ? (
               <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
             ) : (
@@ -216,9 +190,8 @@ export default function SettingsPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted/80">
                       <tr>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Apropriação Excel</th>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Depto. Omie</th>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Categoria Omie</th>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Apropriação</th>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Departamento</th>
                         <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Auto</th>
                         <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Ativo</th>
                       </tr>
@@ -226,9 +199,8 @@ export default function SettingsPage() {
                     <tbody>
                       {(categorias ?? []).map(c => (
                         <tr key={c.id} className="border-t hover:bg-muted/30">
-                          <td className="py-1.5 px-3 text-xs">{c.apropriacao_excel}</td>
-                          <td className="py-1.5 px-3 text-xs">{c.departamento_omie}</td>
-                          <td className="py-1.5 px-3 text-xs text-muted-foreground">{c.categoria_omie ?? '—'}</td>
+                          <td className="py-1.5 px-3 text-xs">{c.apropriacao}</td>
+                          <td className="py-1.5 px-3 text-xs">{c.departamento}</td>
                           <td className="py-1.5 px-3 text-center">
                             <Switch
                               checked={c.match_automatico ?? true}
@@ -250,14 +222,13 @@ export default function SettingsPage() {
                 </div>
                 <div className="border-t pt-4 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">Nova Categoria</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input placeholder="Apropriação Excel" value={newCat.apropriacao_excel} onChange={e => setNewCat(p => ({ ...p, apropriacao_excel: e.target.value }))} className="h-8 text-xs" />
-                    <Input placeholder="Depto. Omie" value={newCat.departamento_omie} onChange={e => setNewCat(p => ({ ...p, departamento_omie: e.target.value }))} className="h-8 text-xs" />
-                    <Input placeholder="Categoria Omie" value={newCat.categoria_omie} onChange={e => setNewCat(p => ({ ...p, categoria_omie: e.target.value }))} className="h-8 text-xs" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input placeholder="Apropriação" value={newCat.apropriacao} onChange={e => setNewCat(p => ({ ...p, apropriacao: e.target.value }))} className="h-8 text-xs" />
+                    <Input placeholder="Departamento" value={newCat.departamento} onChange={e => setNewCat(p => ({ ...p, departamento: e.target.value }))} className="h-8 text-xs" />
                   </div>
-                  <Button size="sm" variant="outline" disabled={!newCat.apropriacao_excel || !newCat.departamento_omie} onClick={() => {
+                  <Button size="sm" variant="outline" disabled={!newCat.apropriacao || !newCat.departamento} onClick={() => {
                     createCategoria.mutate(newCat);
-                    setNewCat({ apropriacao_excel: '', departamento_omie: '', categoria_omie: '' });
+                    setNewCat({ apropriacao: '', departamento: '' });
                   }}>
                     <Plus className="h-3.5 w-3.5 mr-2" /> Adicionar
                   </Button>
