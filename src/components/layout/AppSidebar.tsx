@@ -7,6 +7,7 @@ import {
   BarChart3,
   CheckSquare,
   HardHat,
+  Landmark,
   SlidersHorizontal,
   Settings,
   ChevronLeft,
