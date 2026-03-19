@@ -71,6 +71,13 @@ export default function SettingsPage() {
   const cfg = getConfig(company?.config ?? null);
   const [iaConfig, setIaConfig] = useState({ score_min: 40, score_high: 85, score_auto: 95, auto_active: false, include_examples: true });
   const [desvioLimiar, setDesvioLimiar] = useState(10);
+  const [notifConfig, setNotifConfig] = useState({
+    notif_vencimento_dia: true,
+    notif_vencimento_semana: true,
+    notif_desvio_orcamento: true,
+    notif_desvio_percentual: 10,
+    notif_conciliacao_pendente: true,
+  });
 
   useEffect(() => {
     if (company) {
