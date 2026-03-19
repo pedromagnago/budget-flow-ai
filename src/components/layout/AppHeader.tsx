@@ -7,7 +7,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/client': 'Documentos',
   '/audit': 'Auditoria',
-  '/schedule': 'Cronograma',
+  '/planejamento': 'Obra',
   '/simulator': 'Simulador',
   '/settings': 'Configurações',
   '/import': 'Importação',
