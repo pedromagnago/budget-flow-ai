@@ -26,7 +26,6 @@ interface CompanyConfig {
   limiar_desvio_alerta?: number;
   score_minimo_auto_approve?: number;
   auto_approve_ativo?: boolean;
-  auto_approve_ativo?: boolean;
   incluir_exemplos_correcao?: boolean;
   portal_habilitado?: boolean;
   widgets_dashboard?: string[];
