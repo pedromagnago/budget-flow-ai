@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/formatters';
 import { useServicosSituacao, useUpdateServicoPlanning } from '@/hooks/usePlanejamento';
 import { useCreateServico, useDeleteServico, useAvancoFisico } from '@/hooks/useSchedule';
-import { useBudget } from '@/hooks/useBudget';
+import { useBudgetSummary } from '@/hooks/useBudget';
 import { toast } from 'sonner';
 
 interface EditingCell {
