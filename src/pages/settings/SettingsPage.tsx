@@ -171,20 +171,45 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
-        {/* ── Omie ── */}
-        <TabsContent value="omie">
-          <SectionCard title="Integração Omie">
-            <div className="space-y-4 max-w-sm">
+        {/* ── Quinzena (moved from Omie tab) ── */}
+        <TabsContent value="project">
+          <SectionCard title="Dados do Projeto">
+            {/* existing project form is above — add quinzena selector */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs">Frequência de Sync (dias)</Label>
-                <Input type="number" min={1} max={30} value={syncDias} onChange={e => setSyncDias(parseInt(e.target.value) || 1)} className="h-9 text-sm font-mono" />
+                <Label className="text-xs">Razão Social</Label>
+                <Input value={projectForm.razao_social} onChange={e => setProjectForm(p => ({ ...p, razao_social: e.target.value }))} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Nome Fantasia</Label>
+                <Input value={projectForm.nome_fantasia} onChange={e => setProjectForm(p => ({ ...p, nome_fantasia: e.target.value }))} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Município</Label>
+                <Input value={projectForm.municipio} onChange={e => setProjectForm(p => ({ ...p, municipio: e.target.value }))} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Estado</Label>
+                <Input value={projectForm.estado} onChange={e => setProjectForm(p => ({ ...p, estado: e.target.value }))} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Qtd. Casas</Label>
+                <Input type="number" value={projectForm.qtd_casas} onChange={e => setProjectForm(p => ({ ...p, qtd_casas: parseInt(e.target.value) || 0 }))} className="h-9 text-sm font-mono" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Status</Label>
+                <Select value={projectForm.status} onValueChange={v => setProjectForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="suspenso">Suspenso</SelectItem>
+                    <SelectItem value="concluido">Concluído</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">Quinzena Atual</Label>
-                <Select defaultValue={cfg.quinzena_atual ?? 'Q1'} onValueChange={v => {
-                  const newConfig = { ...cfg, quinzena_atual: v };
-                  updateCompany.mutate({ config: newConfig as unknown as Json });
-                }}>
+                <Select defaultValue={cfg.quinzena_atual ?? 'Q1'} onValueChange={saveQuinzenaConfig}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 10 }, (_, i) => (
@@ -193,13 +218,10 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Para configurar App Key e App Secret do Omie, utilize os secrets do projeto Supabase.
-              </p>
-              <Button size="sm" onClick={saveOmieConfig} disabled={updateCompany.isPending}>
-                <Save className="h-3.5 w-3.5 mr-2" /> Salvar
-              </Button>
             </div>
+            <Button size="sm" onClick={saveProject} disabled={updateCompany.isPending}>
+              <Save className="h-3.5 w-3.5 mr-2" /> Salvar
+            </Button>
           </SectionCard>
         </TabsContent>
 
