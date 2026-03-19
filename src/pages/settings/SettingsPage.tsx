@@ -89,6 +89,13 @@ export default function SettingsPage() {
         include_examples: cfg.incluir_exemplos_correcao ?? true,
       });
       setDesvioLimiar((cfg.limiar_desvio_alerta ?? 0.10) * 100);
+      setNotifConfig({
+        notif_vencimento_dia: cfg.notif_vencimento_dia ?? true,
+        notif_vencimento_semana: cfg.notif_vencimento_semana ?? true,
+        notif_desvio_orcamento: cfg.notif_desvio_orcamento ?? true,
+        notif_desvio_percentual: (cfg.notif_desvio_percentual ?? 10),
+        notif_conciliacao_pendente: cfg.notif_conciliacao_pendente ?? true,
+      });
     }
   }, [company]);
 
