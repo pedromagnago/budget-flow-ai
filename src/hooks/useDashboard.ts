@@ -25,7 +25,6 @@ export function useDashboard() {
         .select('valor')
         .eq('company_id', companyId)
         .eq('tipo', 'receita')
-        .eq('e_previsao', true)
         .is('deleted_at', null);
       if (error || !data) return 0;
       return data.reduce((s, r) => s + Math.abs(Number(r.valor)), 0);
@@ -56,10 +55,16 @@ export function useDashboard() {
       consumido: g.valor_consumido,
     }));
 
-  // Top 5 deviations (highest pct_consumido first)
+  // Top 5 deviations (highest absolute deviation first)
   const topDesvios = (budgetGroups ?? [])
     .filter(g => g.grupo !== 'RECEITAS')
-    .sort((a, b) => b.pct_consumido - a.pct_consumido)
+    .map(g => ({
+      grupo: g.grupo,
+      valor_orcado: g.valor_orcado,
+      valor_consumido: g.valor_consumido,
+      pct_consumido: g.pct_consumido,
+    }))
+    .sort((a, b) => Math.abs(b.pct_consumido - 1) - Math.abs(a.pct_consumido - 1))
     .slice(0, 5);
 
   // S-Curve data

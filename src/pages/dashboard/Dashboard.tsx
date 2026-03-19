@@ -8,9 +8,11 @@ import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { AuditMiniCard } from '@/components/dashboard/AuditMiniCard';
 import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
 import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
+import { FluxoQuinzenalTable } from '@/components/dashboard/FluxoQuinzenalTable';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useDashboard } from '@/hooks/useDashboard';
 import { FileUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Dashboard() {
@@ -24,6 +26,7 @@ export default function Dashboard() {
 
   const [selectedQ, setSelectedQ] = useState<string | null>(null);
   const activeQ = selectedQ ?? quinzena;
+  const [dashTab, setDashTab] = useState('visao');
 
   // Filter S-Curve and Cash Flow data up to selected quinzena
   const qNum = parseInt(activeQ.replace(/\D/g, ''), 10) || 10;
@@ -90,20 +93,33 @@ export default function Dashboard() {
         loading={loadingBudget}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <BudgetVsActualChart data={chartGroups} loading={loadingBudget} />
-        <SCurveChart data={filteredCurva} />
-      </div>
+      <Tabs value={dashTab} onValueChange={setDashTab}>
+        <TabsList>
+          <TabsTrigger value="visao">Visão Geral</TabsTrigger>
+          <TabsTrigger value="fluxo-quinzenal">Fluxo Quinzenal</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <TopDesviosTable data={topDesvios} />
-        <CashFlowChart data={filteredFluxo} />
-        <AuditMiniCard auditStats={auditStats} medicoes={medicoes} />
-      </div>
+        <TabsContent value="visao" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <BudgetVsActualChart data={chartGroups} loading={loadingBudget} />
+            <SCurveChart data={filteredCurva} />
+          </div>
 
-      <div className="grid grid-cols-1">
-        <LatestDocsWidget documents={latestDocs} />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <TopDesviosTable data={topDesvios} />
+            <CashFlowChart data={filteredFluxo} />
+            <AuditMiniCard auditStats={auditStats} medicoes={medicoes} />
+          </div>
+
+          <div className="grid grid-cols-1">
+            <LatestDocsWidget documents={latestDocs} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fluxo-quinzenal">
+          <FluxoQuinzenalTable />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

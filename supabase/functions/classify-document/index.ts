@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const [gruposRes, itensRes, deparaRes, configRes] = await Promise.all([
       admin.from("orcamento_grupos").select("id, nome").eq("company_id", companyId).eq("ativo", true),
       admin.from("orcamento_items").select("id, item, apropriacao, grupo_id, valor_orcado, valor_consumido, valor_saldo").eq("company_id", companyId).eq("ativo", true),
-      admin.from("categoria_depara").select("departamento_omie, categoria_omie, apropriacao_excel, tipo_excel").eq("company_id", companyId).eq("ativo", true),
+      admin.from("categoria_depara").select("departamento, apropriacao, tipo_excel").eq("company_id", companyId).eq("ativo", true),
       admin.from("companies").select("config").eq("id", companyId).single(),
     ]);
 
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     });
     if (depara.length) {
       contextLines.push("\n## Categorias de-para (mapeamento departamento → apropriação):");
-      depara.forEach((d: any) => contextLines.push(`- dept: ${d.departamento_omie} | cat: ${d.categoria_omie ?? "-"} | apropriação: ${d.apropriacao_excel}`));
+      depara.forEach((d: any) => contextLines.push(`- dept: ${d.departamento} | tipo: ${d.tipo_excel ?? "-"} | apropriação: ${d.apropriacao}`));
     }
 
     // --- Call Gemini ---

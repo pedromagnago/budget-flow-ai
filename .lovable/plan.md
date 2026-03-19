@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O sistema é uma plataforma de **controle orçamentário para construção de 64 casas**, com 7 módulos principais.
+O sistema é uma plataforma de **controle orçamentário para construção de 64 casas**, com módulos principais integrados.
 
 ---
 
@@ -35,6 +35,7 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Curva S (com linha de receita acumulada) | ✅ |
 | Top 5 desvios | ✅ |
 | Fluxo de caixa | ✅ |
+| Fluxo quinzenal por grupo | ✅ |
 | Mini card auditoria | ✅ |
 | Últimos documentos | ✅ |
 | Filtro por quinzena (Q1-Q10) | ✅ |
@@ -48,13 +49,12 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Indicadores (pendentes, aprovadas, taxa acerto, score médio) | ✅ |
 | Painel aprovar/corrigir/rejeitar com audit log | ✅ |
 | Edge function classificação IA (Gemini + tool calling) | ✅ |
-| Upload → classificação automática (chamada no useUploadDocument) | ✅ |
-| Dados de teste para validação da UI | ✅ |
+| Upload → classificação automática | ✅ |
 | Auto-approve por score (configurável) | ✅ |
 | Preview de documento no painel de detalhe | ⏳ |
 | Paginação da tabela | ⏳ |
 
-## 4. CRONOGRAMA (`/schedule`) — Avanço Físico
+## 4. CRONOGRAMA (`/planejamento`) — Avanço Físico
 
 | Funcionalidade | Status |
 |---|---|
@@ -64,7 +64,29 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Upload de fotos | ⏳ |
 | Alertas de atraso | ⏳ |
 
-## 5. SIMULADOR (`/simulator`) — Cenários Financeiros
+## 5. FINANCEIRO (`/financeiro`) — Gestão Nativa
+
+| Funcionalidade | Status |
+|---|---|
+| Contas a pagar com filtros e totais | ✅ |
+| Contas a receber | ✅ |
+| Planejamento por quinzena | ✅ |
+| Registrar pagamento/recebimento | ✅ |
+| Parcelamento de lançamentos | ✅ |
+| Edição inline | ✅ |
+| Botão flutuante de ação rápida | ✅ |
+
+## 6. BANCÁRIO (`/banking`) — Gestão Bancária
+
+| Funcionalidade | Status |
+|---|---|
+| Cadastro de contas bancárias | ✅ |
+| Movimentações com filtros | ✅ |
+| Transferências internas | ✅ |
+| Conciliação bancária | ✅ |
+| Ajuste de saldo | ✅ |
+
+## 7. SIMULADOR (`/simulator`) — Cenários Financeiros
 
 | Funcionalidade | Status |
 |---|---|
@@ -74,7 +96,23 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Métricas | ✅ |
 | Exportar PDF/Excel | ⏳ |
 
-## 6. PORTAL DO CLIENTE (`/client`)
+## 8. RELATÓRIOS (`/relatorios`)
+
+| Funcionalidade | Status |
+|---|---|
+| Fluxo de caixa com export Excel | ✅ |
+| Contas a pagar/receber com export Excel | ✅ |
+
+## 9. NOTIFICAÇÕES (`/notificacoes`)
+
+| Funcionalidade | Status |
+|---|---|
+| Geração automática de alertas | ✅ |
+| Sino no header com contagem | ✅ |
+| Página de gerenciamento | ✅ |
+| Tempo real via Supabase Realtime | ✅ |
+
+## 10. PORTAL DO CLIENTE (`/client`)
 
 | Funcionalidade | Status |
 |---|---|
@@ -82,9 +120,8 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Upload de documentos (com classificação IA automática) | ✅ |
 | Histórico de documentos | ✅ |
 | Tabela orçamento por grupo | ✅ |
-| Notificações ao cliente | ⏳ |
 
-## 7. CONFIGURAÇÕES (`/settings`)
+## 11. CONFIGURAÇÕES (`/settings`)
 
 | Funcionalidade | Status |
 |---|---|
@@ -92,8 +129,7 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Configurar parâmetros | ✅ |
 | Categorias de-para | ✅ |
 | Convidar usuários e roles | ✅ |
-| Alertas | ✅ |
-| Sync automático Omie | ⏳ |
+| Alertas e Notificações | ✅ |
 
 ## Mapa de Acesso por Papel (Role)
 
@@ -103,7 +139,10 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 | Documentos | ✓ | ✓ | ✓ | ✓ |
 | Auditoria | ✗ | ✓ | ✓ | ✓ |
 | Cronograma | ✗ | ✗ | ✓ | ✓ |
+| Financeiro | ✗ | ✓ | ✓ | ✓ |
+| Bancário | ✗ | ✓ | ✓ | ✓ |
 | Simulador | ✗ | ✗ | ✓ | ✓ |
+| Relatórios | ✗ | ✓ | ✓ | ✓ |
 | Configurações | ✗ | ✗ | ✓ | ✓ |
 | Importação | ✗ | ✗ | ✓ | ✓ |
 
@@ -113,15 +152,16 @@ O sistema é uma plataforma de **controle orçamentário para construção de 64
 2. `/import` → Importar orçamento (CSV único)
 3. `/import` → Importar serviços + medições + metas
 4. `/dashboard` → Verificar dados nos gráficos
-5. `/schedule` → Registrar avanço físico
+5. `/planejamento` → Registrar avanço físico
 6. `/client` → Cliente envia documentos
 7. `/audit` → Revisar classificações IA
-8. `/simulator` → Planejamento financeiro
+8. `/financeiro` → Gestão de contas a pagar/receber
+9. `/banking` → Conciliação bancária
+10. `/simulator` → Planejamento financeiro
 
 ## Pendências Globais
 
 1. Suporte a Excel (.xlsx) na importação
-2. Sync automático com Omie ERP
-3. Preview de documentos no painel de auditoria
-4. Alertas automáticos de desvio e atraso
-5. UI de distribuição por quinzena (Q1-Q10) dos itens do orçamento
+2. Preview de documentos no painel de auditoria
+3. UI de distribuição por quinzena (Q1-Q10) dos itens do orçamento
+4. Exportar cenários como PDF/Excel
