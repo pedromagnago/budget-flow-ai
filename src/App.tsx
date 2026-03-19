@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard/Dashboard";
 import AuditQueue from "@/pages/audit/AuditQueue";
 import ClientPortal from "@/pages/client/ClientPortal";
 import PlanejamentoPage from "@/pages/planejamento/PlanejamentoPage";
+import BankingPage from "@/pages/banking/BankingPage";
 import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import ImportPage from "@/pages/import/ImportPage";
