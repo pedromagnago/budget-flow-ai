@@ -22,10 +22,10 @@ import { STATUS_COLORS } from '@/lib/constants';
 import type { Json } from '@/integrations/supabase/types';
 
 interface CompanyConfig {
-  dias_sync_omie?: number;
   quinzena_atual?: string;
   limiar_desvio_alerta?: number;
   score_minimo_auto_approve?: number;
+  auto_approve_ativo?: boolean;
   auto_approve_ativo?: boolean;
   incluir_exemplos_correcao?: boolean;
   portal_habilitado?: boolean;
