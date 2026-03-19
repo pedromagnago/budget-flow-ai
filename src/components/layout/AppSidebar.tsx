@@ -36,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { title: 'Documentos', href: '/client', icon: FileText, roles: ['cliente', 'operador', 'supervisor', 'super_admin'] },
   { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' },
   { title: 'Obra', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
+  { title: 'Financeiro', href: '/financeiro', icon: DollarSign, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Bancário', href: '/banking', icon: Landmark, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
   { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'] },

@@ -43,6 +43,7 @@ const App = () => (
               <Route path="/client" element={<ClientPortal />} />
               <Route path="/planejamento" element={<PlanejamentoPage />} />
               <Route path="/schedule" element={<Navigate to="/planejamento" replace />} />
+              <Route path="/financeiro" element={<FinanceiroPage />} />
               <Route path="/banking" element={<BankingPage />} />
               <Route path="/simulator" element={<Simulator />} />
               <Route path="/settings" element={<SettingsPage />} />
