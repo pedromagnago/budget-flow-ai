@@ -8,6 +8,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/client': 'Documentos',
   '/audit': 'Auditoria',
   '/planejamento': 'Obra',
+  '/banking': 'Bancário',
   '/simulator': 'Simulador',
   '/settings': 'Configurações',
   '/import': 'Importação',
