@@ -120,9 +120,8 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold tracking-tighter">Configurações</h1>
 
       <Tabs defaultValue="project" className="space-y-4">
-        <TabsList className="bg-muted/50 h-9 flex-wrap">
+         <TabsList className="bg-muted/50 h-9 flex-wrap">
           <TabsTrigger value="project" className="text-xs">Projeto</TabsTrigger>
-          <TabsTrigger value="omie" className="text-xs">Omie</TabsTrigger>
           <TabsTrigger value="categories" className="text-xs">Categorias</TabsTrigger>
           <TabsTrigger value="ia" className="text-xs">IA</TabsTrigger>
           <TabsTrigger value="alerts" className="text-xs">Alertas</TabsTrigger>
