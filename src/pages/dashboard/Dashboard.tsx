@@ -6,6 +6,7 @@ import { SCurveChart } from '@/components/dashboard/SCurveChart';
 import { TopDesviosTable } from '@/components/dashboard/TopDesviosTable';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { AuditMiniCard } from '@/components/dashboard/AuditMiniCard';
+import { ObraMiniCard } from '@/components/dashboard/ObraMiniCard';
 import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
 import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
 import { FluxoQuinzenalTable } from '@/components/dashboard/FluxoQuinzenalTable';
