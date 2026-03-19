@@ -50,8 +50,6 @@ export default function SettingsPage() {
   const inviteUser = useInviteUser();
   const updateUserRole = useUpdateUserRole();
   const { data: budgetGroups, isLoading: loadingBudget } = useBudgetSummary();
-  const { data: alertas, isLoading: loadingAlertas } = useAlertas();
-  const markRead = useMarkAlertaRead();
 
   // ── Project form state ──
   const [projectForm, setProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64, status: 'ativo' });
