@@ -17,6 +17,7 @@ import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import ImportPage from "@/pages/import/ImportPage";
 import FinanceiroPage from "@/pages/financeiro/FinanceiroPage";
+import NotificacoesPage from "@/pages/notificacoes/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
