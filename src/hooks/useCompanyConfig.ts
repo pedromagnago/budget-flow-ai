@@ -7,7 +7,7 @@ interface CompanyConfig {
   quinzena_atual: string;
   limiar_desvio_alerta: number;
   score_minimo_auto_approve: number;
-  dias_sync_omie: number;
+  
 }
 
 interface CompanyInfo {
