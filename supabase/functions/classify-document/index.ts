@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const [gruposRes, itensRes, deparaRes, configRes] = await Promise.all([
       admin.from("orcamento_grupos").select("id, nome").eq("company_id", companyId).eq("ativo", true),
       admin.from("orcamento_items").select("id, item, apropriacao, grupo_id, valor_orcado, valor_consumido, valor_saldo").eq("company_id", companyId).eq("ativo", true),
-      admin.from("categoria_depara").select("departamento_omie, categoria_omie, apropriacao_excel, tipo_excel").eq("company_id", companyId).eq("ativo", true),
+      admin.from("categoria_depara").select("departamento, apropriacao, tipo_excel").eq("company_id", companyId).eq("ativo", true),
       admin.from("companies").select("config").eq("id", companyId).single(),
     ]);
 
