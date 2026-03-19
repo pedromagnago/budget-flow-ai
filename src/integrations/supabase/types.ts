@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajustes_saldo: {
+        Row: {
+          company_id: string
+          conta_id: string
+          created_at: string | null
+          created_by: string | null
+          data: string
+          diferenca: number | null
+          id: string
+          motivo: string
+          saldo_anterior: number
+          saldo_correto: number
+        }
+        Insert: {
+          company_id: string
+          conta_id: string
+          created_at?: string | null
+          created_by?: string | null
+          data: string
+          diferenca?: number | null
+          id?: string
+          motivo: string
+          saldo_anterior: number
+          saldo_correto: number
+        }
+        Update: {
+          company_id?: string
+          conta_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          data?: string
+          diferenca?: number | null
+          id?: string
+          motivo?: string
+          saldo_anterior?: number
+          saldo_correto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ajustes_saldo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_saldo_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ajustes_saldo_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldo_contas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alertas: {
         Row: {
           company_id: string
@@ -170,34 +231,31 @@ export type Database = {
       }
       categoria_depara: {
         Row: {
-          apropriacao_excel: string
+          apropriacao: string
           ativo: boolean | null
-          categoria_omie: string | null
           company_id: string
           created_at: string | null
-          departamento_omie: string
+          departamento: string
           id: string
           match_automatico: boolean | null
           tipo_excel: string | null
         }
         Insert: {
-          apropriacao_excel: string
+          apropriacao: string
           ativo?: boolean | null
-          categoria_omie?: string | null
           company_id: string
           created_at?: string | null
-          departamento_omie: string
+          departamento: string
           id?: string
           match_automatico?: boolean | null
           tipo_excel?: string | null
         }
         Update: {
-          apropriacao_excel?: string
+          apropriacao?: string
           ativo?: boolean | null
-          categoria_omie?: string | null
           company_id?: string
           created_at?: string | null
-          departamento_omie?: string
+          departamento?: string
           id?: string
           match_automatico?: boolean | null
           tipo_excel?: string | null
@@ -333,8 +391,8 @@ export type Database = {
           id: string
           itens_extraidos: Json | null
           justificativa_ia: string | null
+          lancamento_id: string | null
           motivo_rejeicao: string | null
-          omie_lancamento_id: string | null
           orcamento_item_id: string | null
           score_confianca: number | null
           status_auditoria: string | null
@@ -361,8 +419,8 @@ export type Database = {
           id?: string
           itens_extraidos?: Json | null
           justificativa_ia?: string | null
+          lancamento_id?: string | null
           motivo_rejeicao?: string | null
-          omie_lancamento_id?: string | null
           orcamento_item_id?: string | null
           score_confianca?: number | null
           status_auditoria?: string | null
@@ -389,8 +447,8 @@ export type Database = {
           id?: string
           itens_extraidos?: Json | null
           justificativa_ia?: string | null
+          lancamento_id?: string | null
           motivo_rejeicao?: string | null
-          omie_lancamento_id?: string | null
           orcamento_item_id?: string | null
           score_confianca?: number | null
           status_auditoria?: string | null
@@ -417,10 +475,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "classificacoes_ia_omie_lancamento_id_fkey"
-            columns: ["omie_lancamento_id"]
+            foreignKeyName: "classificacoes_ia_lancamento_id_fkey"
+            columns: ["lancamento_id"]
             isOneToOne: false
-            referencedRelation: "omie_lancamentos"
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classificacoes_ia_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
             referencedColumns: ["id"]
           },
           {
@@ -473,6 +538,59 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      contas_bancarias: {
+        Row: {
+          agencia: string | null
+          ativo: boolean | null
+          banco: string
+          company_id: string
+          conta: string | null
+          created_at: string | null
+          data_saldo_inicial: string
+          id: string
+          nome: string
+          saldo_inicial: number
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          agencia?: string | null
+          ativo?: boolean | null
+          banco: string
+          company_id: string
+          conta?: string | null
+          created_at?: string | null
+          data_saldo_inicial: string
+          id?: string
+          nome: string
+          saldo_inicial?: number
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          agencia?: string | null
+          ativo?: boolean | null
+          banco?: string
+          company_id?: string
+          conta?: string | null
+          created_at?: string | null
+          data_saldo_inicial?: string
+          id?: string
+          nome?: string
+          saldo_inicial?: number
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_bancarias_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cronograma_servicos: {
         Row: {
@@ -558,6 +676,140 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lancamentos: {
+        Row: {
+          categoria: string | null
+          company_id: string
+          conciliado: boolean | null
+          conta_bancaria_id: string | null
+          created_at: string | null
+          created_by: string | null
+          data_emissao: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          deleted_at: string | null
+          departamento: string | null
+          departamento_limpo: string | null
+          e_previsao: boolean | null
+          forma_pagamento: string | null
+          fornecedor_cnpj: string | null
+          fornecedor_razao: string | null
+          id: string
+          movimentacao_id: string | null
+          notificacao_enviada: boolean | null
+          notificado_em: string | null
+          numero_parcela: number | null
+          observacao: string | null
+          orcamento_item_id: string | null
+          parcela: string | null
+          quinzena: string | null
+          situacao: string | null
+          tipo: string
+          total_parcelas: number | null
+          updated_at: string | null
+          updated_by: string | null
+          valor: number
+          valor_pago: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          company_id: string
+          conciliado?: boolean | null
+          conta_bancaria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          deleted_at?: string | null
+          departamento?: string | null
+          departamento_limpo?: string | null
+          e_previsao?: boolean | null
+          forma_pagamento?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_razao?: string | null
+          id?: string
+          movimentacao_id?: string | null
+          notificacao_enviada?: boolean | null
+          notificado_em?: string | null
+          numero_parcela?: number | null
+          observacao?: string | null
+          orcamento_item_id?: string | null
+          parcela?: string | null
+          quinzena?: string | null
+          situacao?: string | null
+          tipo: string
+          total_parcelas?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor: number
+          valor_pago?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          company_id?: string
+          conciliado?: boolean | null
+          conta_bancaria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          deleted_at?: string | null
+          departamento?: string | null
+          departamento_limpo?: string | null
+          e_previsao?: boolean | null
+          forma_pagamento?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_razao?: string | null
+          id?: string
+          movimentacao_id?: string | null
+          notificacao_enviada?: boolean | null
+          notificado_em?: string | null
+          numero_parcela?: number | null
+          observacao?: string | null
+          orcamento_item_id?: string | null
+          parcela?: string | null
+          quinzena?: string | null
+          situacao?: string | null
+          tipo?: string
+          total_parcelas?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: number
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldo_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
             referencedColumns: ["id"]
           },
         ]
@@ -663,110 +915,189 @@ export type Database = {
           },
         ]
       }
-      omie_lancamentos: {
+      movimentacoes_bancarias: {
         Row: {
           categoria: string | null
           company_id: string
           conciliado: boolean | null
-          conta_corrente: string | null
+          conciliado_em: string | null
+          conciliado_por: string | null
+          conta_id: string
           created_at: string | null
-          data_emissao: string | null
-          data_pagamento: string | null
-          data_vencimento: string | null
-          deleted_at: string | null
-          departamento: string | null
-          departamento_limpo: string | null
-          e_previsao: boolean | null
-          fornecedor_cnpj: string | null
-          fornecedor_razao: string | null
-          grupo_omie: string | null
+          created_by: string | null
+          data: string
+          descricao: string
+          documento: string | null
+          fornecedor: string | null
+          grupo_id: string | null
           id: string
+          item_id: string | null
+          lancamento_id: string | null
           observacao: string | null
-          omie_id: number | null
-          omie_integracao_id: string | null
-          orcamento_item_id: string | null
-          origem: string | null
-          parcela: string | null
-          situacao: string | null
-          synced_at: string | null
           tipo: string
-          updated_at: string | null
+          transferencia_id: string | null
           valor: number
-          valor_pago: number | null
         }
         Insert: {
           categoria?: string | null
           company_id: string
           conciliado?: boolean | null
-          conta_corrente?: string | null
+          conciliado_em?: string | null
+          conciliado_por?: string | null
+          conta_id: string
           created_at?: string | null
-          data_emissao?: string | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          deleted_at?: string | null
-          departamento?: string | null
-          departamento_limpo?: string | null
-          e_previsao?: boolean | null
-          fornecedor_cnpj?: string | null
-          fornecedor_razao?: string | null
-          grupo_omie?: string | null
+          created_by?: string | null
+          data: string
+          descricao: string
+          documento?: string | null
+          fornecedor?: string | null
+          grupo_id?: string | null
           id?: string
+          item_id?: string | null
+          lancamento_id?: string | null
           observacao?: string | null
-          omie_id?: number | null
-          omie_integracao_id?: string | null
-          orcamento_item_id?: string | null
-          origem?: string | null
-          parcela?: string | null
-          situacao?: string | null
-          synced_at?: string | null
           tipo: string
-          updated_at?: string | null
+          transferencia_id?: string | null
           valor: number
-          valor_pago?: number | null
         }
         Update: {
           categoria?: string | null
           company_id?: string
           conciliado?: boolean | null
-          conta_corrente?: string | null
+          conciliado_em?: string | null
+          conciliado_por?: string | null
+          conta_id?: string
           created_at?: string | null
-          data_emissao?: string | null
-          data_pagamento?: string | null
-          data_vencimento?: string | null
-          deleted_at?: string | null
-          departamento?: string | null
-          departamento_limpo?: string | null
-          e_previsao?: boolean | null
-          fornecedor_cnpj?: string | null
-          fornecedor_razao?: string | null
-          grupo_omie?: string | null
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          documento?: string | null
+          fornecedor?: string | null
+          grupo_id?: string | null
           id?: string
+          item_id?: string | null
+          lancamento_id?: string | null
           observacao?: string | null
-          omie_id?: number | null
-          omie_integracao_id?: string | null
-          orcamento_item_id?: string | null
-          origem?: string | null
-          parcela?: string | null
-          situacao?: string | null
-          synced_at?: string | null
           tipo?: string
-          updated_at?: string | null
+          transferencia_id?: string | null
           valor?: number
-          valor_pago?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "omie_lancamentos_company_id_fkey"
+            foreignKeyName: "movimentacoes_bancarias_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "omie_lancamentos_orcamento_item_id_fkey"
-            columns: ["orcamento_item_id"]
+            foreignKeyName: "movimentacoes_bancarias_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldo_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_item_id_fkey"
+            columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacoes: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          lancamento_id: string | null
+          lida: boolean | null
+          lida_em: string | null
+          mensagem: string
+          tipo: string
+          titulo: string
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          lancamento_id?: string | null
+          lida?: boolean | null
+          lida_em?: string | null
+          mensagem: string
+          tipo: string
+          titulo: string
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          lancamento_id?: string | null
+          lida?: boolean | null
+          lida_em?: string | null
+          mensagem?: string
+          tipo?: string
+          titulo?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
             referencedColumns: ["id"]
           },
         ]
@@ -958,6 +1289,170 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "orcamento_grupos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_lancamentos_status: {
+        Row: {
+          categoria: string | null
+          company_id: string | null
+          conciliado: boolean | null
+          conta_bancaria_id: string | null
+          created_at: string | null
+          created_by: string | null
+          data_emissao: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          deleted_at: string | null
+          departamento: string | null
+          departamento_limpo: string | null
+          dias_ate_vencimento: number | null
+          e_previsao: boolean | null
+          forma_pagamento: string | null
+          fornecedor_cnpj: string | null
+          fornecedor_razao: string | null
+          id: string | null
+          movimentacao_id: string | null
+          notificacao_enviada: boolean | null
+          notificado_em: string | null
+          numero_parcela: number | null
+          observacao: string | null
+          orcamento_item_id: string | null
+          parcela: string | null
+          quinzena: string | null
+          situacao: string | null
+          status_calculado: string | null
+          tipo: string | null
+          total_parcelas: number | null
+          updated_at: string | null
+          updated_by: string | null
+          valor: number | null
+          valor_pago: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          company_id?: string | null
+          conciliado?: boolean | null
+          conta_bancaria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          deleted_at?: string | null
+          departamento?: string | null
+          departamento_limpo?: string | null
+          dias_ate_vencimento?: never
+          e_previsao?: boolean | null
+          forma_pagamento?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_razao?: string | null
+          id?: string | null
+          movimentacao_id?: string | null
+          notificacao_enviada?: boolean | null
+          notificado_em?: string | null
+          numero_parcela?: number | null
+          observacao?: string | null
+          orcamento_item_id?: string | null
+          parcela?: string | null
+          quinzena?: string | null
+          situacao?: string | null
+          status_calculado?: never
+          tipo?: string | null
+          total_parcelas?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: number | null
+          valor_pago?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          company_id?: string | null
+          conciliado?: boolean | null
+          conta_bancaria_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          deleted_at?: string | null
+          departamento?: string | null
+          departamento_limpo?: string | null
+          dias_ate_vencimento?: never
+          e_previsao?: boolean | null
+          forma_pagamento?: string | null
+          fornecedor_cnpj?: string | null
+          fornecedor_razao?: string | null
+          id?: string | null
+          movimentacao_id?: string | null
+          notificacao_enviada?: boolean | null
+          notificado_em?: string | null
+          numero_parcela?: number | null
+          observacao?: string | null
+          orcamento_item_id?: string | null
+          parcela?: string | null
+          quinzena?: string | null
+          situacao?: string | null
+          status_calculado?: never
+          tipo?: string | null
+          total_parcelas?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: number | null
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "vw_saldo_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_saldo_contas: {
+        Row: {
+          ativo: boolean | null
+          banco: string | null
+          company_id: string | null
+          data_saldo_inicial: string | null
+          id: string | null
+          movimentacoes_total: number | null
+          nome: string | null
+          pendentes_conciliacao: number | null
+          saldo_atual: number | null
+          saldo_inicial: number | null
+          tipo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contas_bancarias_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
