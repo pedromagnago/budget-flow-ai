@@ -78,7 +78,6 @@ export default function SettingsPage() {
         auto_active: cfg.auto_approve_ativo ?? false,
         include_examples: cfg.incluir_exemplos_correcao ?? true,
       });
-      setSyncDias(cfg.dias_sync_omie ?? 1);
       setDesvioLimiar((cfg.limiar_desvio_alerta ?? 0.10) * 100);
     }
   }, [company]);
