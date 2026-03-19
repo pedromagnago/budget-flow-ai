@@ -66,7 +66,7 @@ export default function SettingsPage() {
   // ── Config state ──
   const cfg = getConfig(company?.config ?? null);
   const [iaConfig, setIaConfig] = useState({ score_min: 40, score_high: 85, score_auto: 95, auto_active: false, include_examples: true });
-  const [syncDias, setSyncDias] = useState(1);
+  const [desvioLimiar, setDesvioLimiar] = useState(10);
   const [desvioLimiar, setDesvioLimiar] = useState(10);
 
   useEffect(() => {
