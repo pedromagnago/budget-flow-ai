@@ -2,12 +2,16 @@ import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
-import { ProgressModal } from '@/components/schedule/ProgressModal';
-import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico } from '@/hooks/useSchedule';
-import { formatCurrency, formatCurrencyCompact } from '@/lib/formatters';
+import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico, useRegisterAvanco } from '@/hooks/useSchedule';
+import { formatCurrencyCompact } from '@/lib/formatters';
+import { toast } from 'sonner';
 
 function getCellColor(meta: number, real: number) {
   if (real >= meta && meta > 0) return 'bg-consumido/10 text-consumido';
@@ -16,7 +20,7 @@ function getCellColor(meta: number, real: number) {
   return 'bg-muted/30 text-muted-foreground';
 }
 
-interface ModalState {
+interface DrawerState {
   servicoId: string;
   servicoNome: string;
   medicaoNumero: number;
@@ -28,9 +32,16 @@ export function AvancoFisicoTab() {
   const { data: medicoes, isLoading: lm } = useMedicoes();
   const { data: metas } = useMedicoesMetas();
   const { data: avancos } = useAvancoFisico();
-  const [modal, setModal] = useState<ModalState | null>(null);
+  const registerMut = useRegisterAvanco();
+
+  const [drawer, setDrawer] = useState<DrawerState | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [drawerForm, setDrawerForm] = useState({
+    casas: 0, percentual: '0', usePercentual: false,
+    data: new Date().toISOString().split('T')[0],
+    responsavel: '', observacao: '',
+  });
 
   const avancoMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -55,7 +66,6 @@ export function AvancoFisicoTab() {
 
   const medicaoNumbers = (medicoes ?? []).map(m => m.numero);
 
-  // Filter services
   const filtered = useMemo(() => {
     let list = servicos ?? [];
     if (search) list = list.filter(s => s.nome.toLowerCase().includes(search.toLowerCase()));
@@ -73,25 +83,38 @@ export function AvancoFisicoTab() {
     return list;
   }, [servicos, search, statusFilter, avancoMap, metaMap, medicaoNumbers]);
 
-  // Totals per medicao
-  const medicaoTotals = useMemo(() => {
-    const map: Record<number, { real: number; plan: number; count: number }> = {};
-    medicaoNumbers.forEach(n => {
-      let totalReal = 0, totalPlan = 0, count = 0;
-      (servicos ?? []).forEach(sv => {
-        const meta = metaMap[`${sv.id}_${n}`] ?? 0;
-        if (meta > 0) {
-          count++;
-          totalPlan += meta;
-          const totalMetaUpTo = Array.from({ length: n }, (_, i) => metaMap[`${sv.id}_${i + 1}`] ?? 0).reduce((a, b) => a + b, 0);
-          const real = Math.min(avancoMap[sv.id] ?? 0, totalMetaUpTo);
-          totalReal += real > 0 ? meta : 0; // simplified
-        }
-      });
-      map[n] = { real: count > 0 ? totalReal / count : 0, plan: count > 0 ? totalPlan / count : 0, count };
+  function openDrawer(state: DrawerState) {
+    setDrawer(state);
+    setDrawerForm({
+      casas: 0, percentual: '0', usePercentual: false,
+      data: new Date().toISOString().split('T')[0],
+      responsavel: '', observacao: '',
     });
-    return map;
-  }, [servicos, medicaoNumbers, metaMap, avancoMap]);
+  }
+
+  async function handleSaveAvanco() {
+    if (!drawer) return;
+    const casas = drawerForm.usePercentual
+      ? Math.round((parseFloat(drawerForm.percentual) / 100) * drawer.qtdTotal)
+      : drawerForm.casas;
+
+    if (casas < 0 || casas > drawer.qtdTotal) {
+      toast.error(`Valor deve estar entre 0 e ${drawer.qtdTotal}`);
+      return;
+    }
+
+    try {
+      await registerMut.mutateAsync({
+        servicoId: drawer.servicoId,
+        casasConcluidas: casas,
+        qtdTotal: drawer.qtdTotal,
+      });
+      toast.success(`Avanço registrado: ${casas}/${drawer.qtdTotal} casas (${((casas / drawer.qtdTotal) * 100).toFixed(1)}%)`);
+      setDrawer(null);
+    } catch {
+      toast.error('Erro ao registrar avanço');
+    }
+  }
 
   if (ls || lm) return <div className="p-4"><SkeletonTable rows={10} cols={10} /></div>;
 
@@ -122,7 +145,6 @@ export function AvancoFisicoTab() {
               ))}
               <th className="text-center py-2 px-3 min-w-[80px]">% Geral</th>
             </tr>
-            {/* Totals row */}
             <tr className="bg-muted/30 border-b">
               <td className="text-left py-1 px-3 sticky left-0 bg-muted/30 z-10 text-[10px] text-muted-foreground font-medium">Planejado (R$)</td>
               {medicaoNumbers.map(n => (
@@ -161,7 +183,12 @@ export function AvancoFisicoTab() {
                       <td key={n} className="py-1 px-2 text-center">
                         <div
                           className={cn('rounded px-2 py-1 text-[11px] font-mono cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all', getCellColor(meta, cellReal))}
-                          onClick={() => setModal({ servicoId: servico.id, servicoNome: servico.nome, medicaoNumero: n, qtdTotal: servico.quantidade ?? 64 })}
+                          onClick={() => openDrawer({
+                            servicoId: servico.id,
+                            servicoNome: servico.nome,
+                            medicaoNumero: n,
+                            qtdTotal: servico.quantidade ?? 64,
+                          })}
                         >
                           {cellReal.toFixed(0)}% / {meta.toFixed(0)}%
                         </div>
@@ -176,15 +203,83 @@ export function AvancoFisicoTab() {
         </table>
       </div>
 
-      {modal && (
-        <ProgressModal
-          servicoId={modal.servicoId}
-          servicoNome={modal.servicoNome}
-          medicaoNumero={modal.medicaoNumero}
-          qtdTotal={modal.qtdTotal}
-          onClose={() => setModal(null)}
-        />
-      )}
+      {/* Drawer de registro de avanço */}
+      <Sheet open={drawer !== null} onOpenChange={() => setDrawer(null)}>
+        <SheetContent className="w-[380px] sm:w-[420px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-base">Registrar Avanço</SheetTitle>
+          </SheetHeader>
+          {drawer && (
+            <div className="space-y-5 mt-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Serviço</p>
+                <p className="text-sm font-medium">{drawer.servicoNome}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Medição</p>
+                <p className="text-sm font-medium font-mono">M{drawer.medicaoNumero}</p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Entrada por percentual</Label>
+                <Switch
+                  checked={drawerForm.usePercentual}
+                  onCheckedChange={v => setDrawerForm(f => ({ ...f, usePercentual: v }))}
+                />
+              </div>
+
+              {drawerForm.usePercentual ? (
+                <div className="space-y-2">
+                  <Label className="text-xs">Percentual concluído</Label>
+                  <Input
+                    type="number"
+                    min={0} max={100} step={0.1}
+                    value={drawerForm.percentual}
+                    onChange={e => setDrawerForm(f => ({ ...f, percentual: e.target.value }))}
+                    className="h-9 text-sm font-mono"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    ≈ {Math.round((parseFloat(drawerForm.percentual) / 100) * drawer.qtdTotal)} de {drawer.qtdTotal} casas
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-xs">Casas concluídas</Label>
+                  <Input
+                    type="number"
+                    min={0} max={drawer.qtdTotal}
+                    value={drawerForm.casas}
+                    onChange={e => setDrawerForm(f => ({ ...f, casas: parseInt(e.target.value) || 0 }))}
+                    className="h-9 text-sm font-mono"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Total: {drawer.qtdTotal} — {drawer.qtdTotal > 0 ? ((drawerForm.casas / drawer.qtdTotal) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-xs">Data do registro</Label>
+                <Input type="date" value={drawerForm.data} onChange={e => setDrawerForm(f => ({ ...f, data: e.target.value }))} className="h-9 text-sm" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Responsável</Label>
+                <Input value={drawerForm.responsavel} onChange={e => setDrawerForm(f => ({ ...f, responsavel: e.target.value }))} className="h-9 text-sm" placeholder="Nome do responsável" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Observação</Label>
+                <Textarea value={drawerForm.observacao} onChange={e => setDrawerForm(f => ({ ...f, observacao: e.target.value }))} rows={3} placeholder="Detalhes do avanço..." />
+              </div>
+
+              <Button className="w-full" onClick={handleSaveAvanco} disabled={registerMut.isPending}>
+                Salvar Avanço
+              </Button>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Trash2, Check, X, Unlock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, Check, X, Unlock, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { useMedicoesFinanceiro, useLiberarMedicao, type MedicaoFinanceiro } from '@/hooks/usePlanejamento';
-import { useCreateMedicao, useUpdateMedicao, useDeleteMedicao } from '@/hooks/useSchedule';
+import { useCreateMedicao, useUpdateMedicao, useDeleteMedicao, useMedicoesMetas, useCronogramaServicos } from '@/hooks/useSchedule';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/hooks/useCompany';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 interface EditingCell { id: string; field: string; value: string; }
@@ -31,9 +35,16 @@ const STATUS_FIN_LABELS: Record<string, string> = {
 
 export function MedicoesTab() {
   const { data: medicoes, isLoading } = useMedicoesFinanceiro();
+  const { data: servicos } = useCronogramaServicos();
+  const { data: metas } = useMedicoesMetas();
+  const { companyId } = useCompany();
+  const qc = useQueryClient();
+
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const [adding, setAdding] = useState(false);
   const [liberarModal, setLiberarModal] = useState<MedicaoFinanceiro | null>(null);
+  const [metasDrawer, setMetasDrawer] = useState<number | null>(null);
+  const [metaValues, setMetaValues] = useState<Record<string, string>>({});
   const [newRow, setNewRow] = useState({ data_inicio: '', data_fim: '', valor_planejado: '' });
   const [liberarForm, setLiberarForm] = useState({ valor: '', data: new Date().toISOString().split('T')[0], obs: '' });
 
@@ -45,6 +56,65 @@ export function MedicoesTab() {
   const list = medicoes ?? [];
   const nextNumero = list.length > 0 ? Math.max(...list.map(m => m.numero)) + 1 : 1;
   const totals = list.reduce((acc, m) => ({ plan: acc.plan + m.valor_planejado, lib: acc.lib + m.valor_liberado }), { plan: 0, lib: 0 });
+
+  // Build metas for the drawer
+  const metasForDrawer = useMemo(() => {
+    if (metasDrawer === null || !servicos?.length) return [];
+    const metaMap: Record<string, number> = {};
+    (metas ?? []).forEach(m => {
+      if (m.medicao_numero === metasDrawer) metaMap[m.servico_id] = m.meta_percentual;
+    });
+    return (servicos ?? []).map(sv => ({
+      servico_id: sv.id,
+      nome: sv.nome,
+      meta: metaMap[sv.id] ?? 0,
+    }));
+  }, [metasDrawer, servicos, metas]);
+
+  const metaTotal = useMemo(() => {
+    return metasForDrawer.reduce((s, m) => {
+      const val = parseFloat(metaValues[m.servico_id] ?? String(m.meta)) || 0;
+      return s + val;
+    }, 0);
+  }, [metasForDrawer, metaValues]);
+
+  function openMetasDrawer(numero: number) {
+    const map: Record<string, string> = {};
+    metasForDrawer.forEach(m => { map[m.servico_id] = String(m.meta); });
+    // Need to recalc after state updates
+    setMetasDrawer(numero);
+    // Pre-fill after a tick
+    setTimeout(() => {
+      const metaMap: Record<string, string> = {};
+      (metas ?? []).forEach(m => {
+        if (m.medicao_numero === numero) metaMap[m.servico_id] = String(m.meta_percentual);
+      });
+      setMetaValues(metaMap);
+    }, 0);
+  }
+
+  async function saveMetasDrawer() {
+    if (!metasDrawer || !companyId) return;
+    try {
+      for (const sv of servicos ?? []) {
+        const val = parseFloat(metaValues[sv.id] ?? '0') || 0;
+        const existing = (metas ?? []).find(m => m.servico_id === sv.id && m.medicao_numero === metasDrawer);
+        if (existing) {
+          await supabase.from('medicoes_metas').update({ meta_percentual: val } as Record<string, unknown>).eq('id', existing.id);
+        } else if (val > 0) {
+          await supabase.from('medicoes_metas').insert({
+            company_id: companyId,
+            servico_id: sv.id,
+            medicao_numero: metasDrawer,
+            meta_percentual: val,
+          });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ['medicoes-metas'] });
+      toast.success('Metas salvas');
+      setMetasDrawer(null);
+    } catch { toast.error('Erro ao salvar metas'); }
+  }
 
   async function commitEdit() {
     if (!editing) return;
@@ -86,7 +156,7 @@ export function MedicoesTab() {
         medicaoNumero: liberarModal.numero,
         lancamentoExistenteId: liberarModal.lancamento_receita_id,
       });
-      toast.success(`Medição M${liberarModal.numero} liberada — lançamento de receita criado`);
+      toast.success(`Medição M${liberarModal.numero} liberada — lançamento de receita criado em A Receber`);
       setLiberarModal(null);
     } catch { toast.error('Erro ao liberar'); }
   }
@@ -94,17 +164,15 @@ export function MedicoesTab() {
   function renderCell(m: MedicaoFinanceiro, field: string, value: string | number, opts?: { format?: (v: number) => string; type?: string }) {
     if (editing?.id === m.id && editing?.field === field) {
       return (
-        <div className="flex items-center gap-1">
-          <Input
-            className="h-7 w-28 text-xs"
-            type={opts?.type ?? (typeof value === 'number' ? 'number' : field.startsWith('data') ? 'date' : 'text')}
-            value={editing.value}
-            onChange={e => setEditing({ ...editing, value: e.target.value })}
-            onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(null); }}
-            onBlur={commitEdit}
-            autoFocus
-          />
-        </div>
+        <Input
+          className="h-7 w-28 text-xs"
+          type={opts?.type ?? (typeof value === 'number' ? 'number' : field.startsWith('data') ? 'date' : 'text')}
+          value={editing.value}
+          onChange={e => setEditing({ ...editing, value: e.target.value })}
+          onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(null); }}
+          onBlur={commitEdit}
+          autoFocus
+        />
       );
     }
     const display = opts?.format && typeof value === 'number' ? opts.format(value) : String(value);
@@ -138,7 +206,7 @@ export function MedicoesTab() {
               <TableHead>Prev. Liberação</TableHead>
               <TableHead>Liberação Real</TableHead>
               <TableHead>Status Fin.</TableHead>
-              <TableHead className="w-20">Ações</TableHead>
+              <TableHead className="w-24">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,6 +226,12 @@ export function MedicoesTab() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-0.5">
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-primary"
+                      title="Definir metas" onClick={() => openMetasDrawer(m.numero)}
+                    >
+                      <Target className="h-3.5 w-3.5" />
+                    </Button>
                     {(m.status === 'em_andamento' || m.status_financeiro === 'em_andamento') && (
                       <Button
                         variant="ghost" size="icon" className="h-7 w-7 text-consumido"
@@ -235,6 +309,43 @@ export function MedicoesTab() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Drawer Definir Metas */}
+      <Sheet open={metasDrawer !== null} onOpenChange={() => setMetasDrawer(null)}>
+        <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Metas — Medição M{metasDrawer}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Total das metas</p>
+              <Badge variant={Math.abs(metaTotal - 100) < 0.1 ? 'default' : 'destructive'} className="text-xs font-mono">
+                {metaTotal.toFixed(1)}%
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {metasForDrawer.map(m => (
+                <div key={m.servico_id} className="flex items-center gap-3">
+                  <span className="text-xs flex-1 truncate">{m.nome}</span>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      className="h-7 w-20 text-xs text-right"
+                      value={metaValues[m.servico_id] ?? String(m.meta)}
+                      onChange={e => setMetaValues(prev => ({ ...prev, [m.servico_id]: e.target.value }))}
+                      min={0}
+                      max={100}
+                      step={0.1}
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button className="w-full" size="sm" onClick={saveMetasDrawer}>Salvar Metas</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

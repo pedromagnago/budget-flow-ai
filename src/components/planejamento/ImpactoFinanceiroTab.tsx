@@ -1,19 +1,23 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Check, Eye, XCircle } from 'lucide-react';
-import { useImpactos, useResolveImpacto } from '@/hooks/usePlanejamento';
-import { useServicosSituacao } from '@/hooks/usePlanejamento';
-import { formatCurrency } from '@/lib/formatters';
+import { AlertTriangle, Check, XCircle, Zap, ExternalLink } from 'lucide-react';
+import { useImpactos, useResolveImpacto, useServicosSituacao } from '@/hooks/usePlanejamento';
+import { formatCurrency, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
 
 const TIPO_LABELS: Record<string, string> = {
   desvio_fisico: 'Desvio Físico',
   medicao_liberada: 'Medição Liberada',
   atraso_servico: 'Atraso Serviço',
+  antecipacao_servico: 'Antecipação',
+  medicao_parcial: 'Medição Parcial',
 };
 
 export function ImpactoFinanceiroTab() {
@@ -21,7 +25,10 @@ export function ImpactoFinanceiroTab() {
   const { data: historico } = useImpactos(true);
   const { data: servicosSituacao } = useServicosSituacao();
   const resolveMut = useResolveImpacto();
+  const navigate = useNavigate();
   const [historicoFilter, setHistoricoFilter] = useState('todos');
+  const [simServico, setSimServico] = useState('');
+  const [simDias, setSimDias] = useState('');
 
   const atrasados = (servicosSituacao ?? []).filter(s => s.situacao_calculada === 'atrasado');
 
@@ -37,6 +44,11 @@ export function ImpactoFinanceiroTab() {
   const filteredHistorico = (historico ?? []).filter(h =>
     historicoFilter === 'todos' || h.tipo === historicoFilter
   );
+
+  function handleSimular() {
+    if (!simServico || !simDias) { toast.error('Selecione serviço e dias'); return; }
+    navigate(`/simulator?servico=${simServico}&dias=${simDias}`);
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +89,7 @@ export function ImpactoFinanceiroTab() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-consumido" title="Resolver" onClick={() => handleResolve(imp.id, 'resolvido')}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-consumido" title="Resolver" onClick={() => handleResolve(imp.id, 'lancamento_reprogramado')}>
                           <Check className="h-3 w-3" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-module-dashboard" title="Gerar alerta" onClick={() => handleResolve(imp.id, 'alerta_gerado')}>
@@ -96,7 +108,7 @@ export function ImpactoFinanceiroTab() {
         </CardContent>
       </Card>
 
-      {/* Serviços atrasados com impacto */}
+      {/* Serviços atrasados */}
       {atrasados.length > 0 && (
         <Card className="border-destructive/20">
           <CardContent className="pt-5 pb-4">
@@ -115,6 +127,36 @@ export function ImpactoFinanceiroTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Simulação de atraso */}
+      <Card>
+        <CardContent className="pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="h-4 w-4 text-module-simulator" />
+            <h3 className="font-semibold text-sm">Simulação de Atraso</h3>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1.5 flex-1 min-w-[180px]">
+              <Label className="text-xs">Serviço</Label>
+              <Select value={simServico} onValueChange={setSimServico}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecionar serviço" /></SelectTrigger>
+                <SelectContent>
+                  {(servicosSituacao ?? []).map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 w-24">
+              <Label className="text-xs">Dias de atraso</Label>
+              <Input type="number" className="h-8 text-xs" value={simDias} onChange={e => setSimDias(e.target.value)} placeholder="15" />
+            </div>
+            <Button size="sm" variant="outline" onClick={handleSimular}>
+              <ExternalLink className="h-3.5 w-3.5 mr-1" /> Simular
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Histórico */}
       <Card>
@@ -159,7 +201,7 @@ export function ImpactoFinanceiroTab() {
                       {imp.impacto_financeiro ? formatCurrency(imp.impacto_financeiro) : '—'}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(imp.created_at).toLocaleDateString('pt-BR')}
+                      {formatDate(imp.created_at)}
                     </TableCell>
                   </TableRow>
                 ))}
