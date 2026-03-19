@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Save, Plus, Eye, EyeOff, CheckCircle2, AlertTriangle, Users, Layers, Bell, UserPlus, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users } from 'lucide-react';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
