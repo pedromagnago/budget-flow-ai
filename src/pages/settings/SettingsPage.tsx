@@ -164,49 +164,6 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <Button size="sm" onClick={saveProject} disabled={updateCompany.isPending}>
-              <Save className="h-3.5 w-3.5 mr-2" /> Salvar
-            </Button>
-          </SectionCard>
-        </TabsContent>
-
-        {/* ── Quinzena (moved from Omie tab) ── */}
-        <TabsContent value="project">
-          <SectionCard title="Dados do Projeto">
-            {/* existing project form is above — add quinzena selector */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">Razão Social</Label>
-                <Input value={projectForm.razao_social} onChange={e => setProjectForm(p => ({ ...p, razao_social: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Nome Fantasia</Label>
-                <Input value={projectForm.nome_fantasia} onChange={e => setProjectForm(p => ({ ...p, nome_fantasia: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Município</Label>
-                <Input value={projectForm.municipio} onChange={e => setProjectForm(p => ({ ...p, municipio: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Estado</Label>
-                <Input value={projectForm.estado} onChange={e => setProjectForm(p => ({ ...p, estado: e.target.value }))} className="h-9 text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Qtd. Casas</Label>
-                <Input type="number" value={projectForm.qtd_casas} onChange={e => setProjectForm(p => ({ ...p, qtd_casas: parseInt(e.target.value) || 0 }))} className="h-9 text-sm font-mono" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Status</Label>
-                <Select value={projectForm.status} onValueChange={v => setProjectForm(p => ({ ...p, status: v }))}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="suspenso">Suspenso</SelectItem>
-                    <SelectItem value="concluido">Concluído</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-2">
                 <Label className="text-xs">Quinzena Atual</Label>
                 <Select defaultValue={cfg.quinzena_atual ?? 'Q1'} onValueChange={saveQuinzenaConfig}>
@@ -227,7 +184,7 @@ export default function SettingsPage() {
 
         {/* ── Categorias ── */}
         <TabsContent value="categories">
-          <SectionCard title="De-Para de Categorias" icon={Layers}>
+          <SectionCard title="Mapeamento de Categorias" icon={Layers}>
             {loadingCats ? (
               <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
             ) : (
@@ -236,9 +193,8 @@ export default function SettingsPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted/80">
                       <tr>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Apropriação Excel</th>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Depto. Omie</th>
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Categoria Omie</th>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Apropriação</th>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Departamento</th>
                         <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Auto</th>
                         <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Ativo</th>
                       </tr>
@@ -246,9 +202,8 @@ export default function SettingsPage() {
                     <tbody>
                       {(categorias ?? []).map(c => (
                         <tr key={c.id} className="border-t hover:bg-muted/30">
-                          <td className="py-1.5 px-3 text-xs">{c.apropriacao_excel}</td>
-                          <td className="py-1.5 px-3 text-xs">{c.departamento_omie}</td>
-                          <td className="py-1.5 px-3 text-xs text-muted-foreground">{c.categoria_omie ?? '—'}</td>
+                          <td className="py-1.5 px-3 text-xs">{c.apropriacao}</td>
+                          <td className="py-1.5 px-3 text-xs">{c.departamento}</td>
                           <td className="py-1.5 px-3 text-center">
                             <Switch
                               checked={c.match_automatico ?? true}
@@ -270,14 +225,13 @@ export default function SettingsPage() {
                 </div>
                 <div className="border-t pt-4 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground">Nova Categoria</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input placeholder="Apropriação Excel" value={newCat.apropriacao_excel} onChange={e => setNewCat(p => ({ ...p, apropriacao_excel: e.target.value }))} className="h-8 text-xs" />
-                    <Input placeholder="Depto. Omie" value={newCat.departamento_omie} onChange={e => setNewCat(p => ({ ...p, departamento_omie: e.target.value }))} className="h-8 text-xs" />
-                    <Input placeholder="Categoria Omie" value={newCat.categoria_omie} onChange={e => setNewCat(p => ({ ...p, categoria_omie: e.target.value }))} className="h-8 text-xs" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input placeholder="Apropriação" value={newCat.apropriacao} onChange={e => setNewCat(p => ({ ...p, apropriacao: e.target.value }))} className="h-8 text-xs" />
+                    <Input placeholder="Departamento" value={newCat.departamento} onChange={e => setNewCat(p => ({ ...p, departamento: e.target.value }))} className="h-8 text-xs" />
                   </div>
-                  <Button size="sm" variant="outline" disabled={!newCat.apropriacao_excel || !newCat.departamento_omie} onClick={() => {
+                  <Button size="sm" variant="outline" disabled={!newCat.apropriacao || !newCat.departamento} onClick={() => {
                     createCategoria.mutate(newCat);
-                    setNewCat({ apropriacao_excel: '', departamento_omie: '', categoria_omie: '' });
+                    setNewCat({ apropriacao: '', departamento: '' });
                   }}>
                     <Plus className="h-3.5 w-3.5 mr-2" /> Adicionar
                   </Button>
