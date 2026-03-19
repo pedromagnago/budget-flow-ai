@@ -29,6 +29,11 @@ interface CompanyConfig {
   incluir_exemplos_correcao?: boolean;
   portal_habilitado?: boolean;
   widgets_dashboard?: string[];
+  notif_vencimento_dia?: boolean;
+  notif_vencimento_semana?: boolean;
+  notif_desvio_orcamento?: boolean;
+  notif_desvio_percentual?: number;
+  notif_conciliacao_pendente?: boolean;
 }
 
 function getConfig(config: Json | null): CompanyConfig {
