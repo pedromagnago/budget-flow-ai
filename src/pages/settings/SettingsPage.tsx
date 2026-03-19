@@ -296,46 +296,46 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
-        {/* ── Alertas ── */}
+        {/* ── Alertas e Notificações ── */}
         <TabsContent value="alerts">
-          <SectionCard title="Alertas do Sistema" icon={Bell}>
-            {loadingAlertas ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : (alertas ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum alerta registrado.</p>
-            ) : (
-              <div className="max-h-[400px] overflow-auto space-y-2">
-                {(alertas ?? []).map(a => (
-                  <div key={a.id} className={`flex items-start gap-3 p-3 rounded-lg border ${a.lido ? 'opacity-60' : ''}`}>
-                    {a.severidade === 'alta' || a.severidade === 'critica' ? (
-                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">{a.titulo}</p>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {a.tipo}
-                        </Badge>
-                        {a.severidade && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${a.severidade === 'critica' ? 'bg-destructive/10 text-destructive' : a.severidade === 'alta' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-                            {a.severidade}
-                          </span>
-                        )}
-                      </div>
-                      {a.mensagem && <p className="text-xs text-muted-foreground mt-0.5">{a.mensagem}</p>}
-                      <p className="text-[10px] text-muted-foreground mt-1">{formatDateTime(a.created_at!)}</p>
-                    </div>
-                    {!a.lido && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => markRead.mutate(a.id)}>
-                        Marcar lido
-                      </Button>
-                    )}
-                  </div>
-                ))}
+          <SectionCard title="Alertas e Notificações" icon={Bell}>
+            <div className="space-y-5 max-w-md">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre vencimentos do dia</Label>
+                <Switch checked={notifConfig.notif_vencimento_dia} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_vencimento_dia: v }))} />
               </div>
-            )}
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre vencimentos da semana</Label>
+                <Switch checked={notifConfig.notif_vencimento_semana} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_vencimento_semana: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs">Alertar quando desvio orçamentário superar</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number"
+                      value={notifConfig.notif_desvio_percentual}
+                      onChange={e => setNotifConfig(p => ({ ...p, notif_desvio_percentual: Number(e.target.value) || 0 }))}
+                      className="h-7 w-20 text-xs"
+                      min={1}
+                      max={100}
+                    />
+                    <span className="text-xs text-muted-foreground">%</span>
+                  </div>
+                </div>
+                <Switch checked={notifConfig.notif_desvio_orcamento} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_desvio_orcamento: v }))} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Notificar sobre conciliações pendentes</Label>
+                <Switch checked={notifConfig.notif_conciliacao_pendente} onCheckedChange={v => setNotifConfig(p => ({ ...p, notif_conciliacao_pendente: v }))} />
+              </div>
+              <Button size="sm" onClick={() => {
+                const newConfig: CompanyConfig = { ...cfg, ...notifConfig };
+                updateCompany.mutate({ config: newConfig as unknown as Json });
+              }} disabled={updateCompany.isPending}>
+                <Save className="h-3.5 w-3.5 mr-2" /> Salvar Preferências
+              </Button>
+            </div>
           </SectionCard>
         </TabsContent>
 
