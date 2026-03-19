@@ -93,7 +93,6 @@ export default function SettingsPage() {
       incluir_exemplos_correcao: iaConfig.include_examples,
       limiar_desvio_alerta: desvioLimiar / 100,
     };
-    };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
   const saveQuinzenaConfig = (v: string) => {
