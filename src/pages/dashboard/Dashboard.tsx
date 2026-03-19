@@ -6,6 +6,7 @@ import { SCurveChart } from '@/components/dashboard/SCurveChart';
 import { TopDesviosTable } from '@/components/dashboard/TopDesviosTable';
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart';
 import { AuditMiniCard } from '@/components/dashboard/AuditMiniCard';
+import { ObraMiniCard } from '@/components/dashboard/ObraMiniCard';
 import { LatestDocsWidget } from '@/components/dashboard/LatestDocsWidget';
 import { DashboardAlerts } from '@/components/dashboard/DashboardAlerts';
 import { FluxoQuinzenalTable } from '@/components/dashboard/FluxoQuinzenalTable';
@@ -105,10 +106,11 @@ export default function Dashboard() {
             <SCurveChart data={filteredCurva} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <TopDesviosTable data={topDesvios} />
             <CashFlowChart data={filteredFluxo} />
             <AuditMiniCard auditStats={auditStats} medicoes={medicoes} />
+            <ObraMiniCard />
           </div>
 
           <div className="grid grid-cols-1">
