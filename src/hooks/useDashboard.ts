@@ -21,7 +21,7 @@ export function useDashboard() {
     queryFn: async () => {
       if (!companyId) return 0;
       const { data, error } = await supabase
-        .from('omie_lancamentos')
+        .from('lancamentos')
         .select('valor')
         .eq('company_id', companyId)
         .eq('tipo', 'receita')

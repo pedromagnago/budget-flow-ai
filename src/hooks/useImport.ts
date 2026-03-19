@@ -61,15 +61,19 @@ export const COLUMN_PRESETS: Record<ImportTarget, { required: string[]; optional
     optional: ['meta_casas'],
     description: 'Metas por serviço × medição',
   },
-  omie_lancamentos: {
+  lancamentos: {
     required: ['tipo', 'valor', 'fornecedor_razao'],
-    optional: ['data_vencimento', 'data_emissao', 'data_pagamento', 'departamento', 'categoria', 'situacao', 'e_previsao', 'observacao'],
-    description: 'Lançamentos financeiros (contas a pagar/receber)',
+    optional: [
+      'data_vencimento', 'data_emissao', 'data_pagamento',
+      'departamento', 'categoria', 'situacao', 'e_previsao',
+      'observacao', 'forma_pagamento', 'numero_parcela', 'total_parcelas',
+    ],
+    description: 'Lançamentos financeiros — contas a pagar e a receber',
   },
   categoria_depara: {
-    required: ['apropriacao_excel', 'departamento_omie'],
-    optional: ['categoria_omie', 'tipo_excel'],
-    description: 'Mapeamento de categorias Excel ↔ Omie',
+    required: ['apropriacao', 'departamento'],
+    optional: ['tipo_excel'],
+    description: 'Mapeamento de categorias do orçamento',
   },
 };
 

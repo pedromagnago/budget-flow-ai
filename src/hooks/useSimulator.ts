@@ -7,9 +7,9 @@ import type { Tables } from '@/integrations/supabase/types';
 
 export type Cenario = Tables<'cenarios'>;
 export type CenarioAjuste = Tables<'cenario_ajustes'>;
-export type OmieLancamento = Tables<'omie_lancamentos'>;
+export type Lancamento = Tables<'lancamentos'>;
 
-export interface PrevisaoSimulada extends OmieLancamento {
+export interface PrevisaoSimulada extends Lancamento {
   ajuste?: CenarioAjuste;
   valor_simulado: number;
   vencimento_simulado: string | null;
@@ -73,7 +73,7 @@ export function useDeleteCenario() {
   });
 }
 
-// ── Previsões (omie_lancamentos where e_previsao=true) ──
+// ── Previsões (lancamentos where e_previsao=true) ──
 export function usePrevisoes() {
   const { companyId } = useCompany();
   return useQuery({
@@ -82,14 +82,14 @@ export function usePrevisoes() {
     staleTime: STALE_TIMES.dashboard,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('omie_lancamentos')
+        .from('lancamentos')
         .select('*')
         .eq('company_id', companyId!)
         .eq('e_previsao', true)
         .is('deleted_at', null)
         .order('data_vencimento', { ascending: true });
       if (error) throw error;
-      return data as OmieLancamento[];
+      return data as Lancamento[];
     },
   });
 }
@@ -138,7 +138,7 @@ export function useSaveAjuste() {
       const { error } = await supabase.from('cenario_ajustes').insert({
         ...input,
         company_id: companyId!,
-        referencia_tipo: 'omie_lancamento',
+        referencia_tipo: 'lancamento',
       });
       if (error) throw error;
     },
@@ -158,7 +158,7 @@ export function useRemoveAjuste() {
 }
 
 // ── Merge previsões + ajustes ──
-export function mergePrevisoes(previsoes: OmieLancamento[], ajustes: CenarioAjuste[]): PrevisaoSimulada[] {
+export function mergePrevisoes(previsoes: Lancamento[], ajustes: CenarioAjuste[]): PrevisaoSimulada[] {
   const ajusteMap = new Map<string, CenarioAjuste[]>();
   ajustes.forEach(a => {
     const list = ajusteMap.get(a.referencia_id ?? '') ?? [];

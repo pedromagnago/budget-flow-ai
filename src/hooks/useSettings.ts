@@ -83,7 +83,7 @@ export function useCreateCategoria() {
   const qc = useQueryClient();
   const { companyId } = useCompany();
   return useMutation({
-    mutationFn: async (input: { apropriacao_excel: string; departamento_omie: string; categoria_omie?: string }) => {
+    mutationFn: async (input: { apropriacao: string; departamento: string; tipo_excel?: string }) => {
       const { error } = await supabase
         .from('categoria_depara')
         .insert({ ...input, company_id: companyId! });
