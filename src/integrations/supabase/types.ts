@@ -227,6 +227,13 @@ export type Database = {
             referencedRelation: "cronograma_servicos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "avanco_fisico_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categoria_depara: {
@@ -594,30 +601,60 @@ export type Database = {
       }
       cronograma_servicos: {
         Row: {
+          codigo: string | null
           company_id: string
           created_at: string | null
+          data_fim_plan: string | null
+          data_fim_real: string | null
+          data_inicio_plan: string | null
+          data_inicio_real: string | null
+          grupo_id: string | null
           id: string
           nome: string
+          ordem: number | null
           preco_unitario: number | null
           quantidade: number | null
+          responsavel: string | null
+          status: string | null
+          unidade: string | null
           valor_total: number
         }
         Insert: {
+          codigo?: string | null
           company_id: string
           created_at?: string | null
+          data_fim_plan?: string | null
+          data_fim_real?: string | null
+          data_inicio_plan?: string | null
+          data_inicio_real?: string | null
+          grupo_id?: string | null
           id?: string
           nome: string
+          ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
+          responsavel?: string | null
+          status?: string | null
+          unidade?: string | null
           valor_total: number
         }
         Update: {
+          codigo?: string | null
           company_id?: string
           created_at?: string | null
+          data_fim_plan?: string | null
+          data_fim_real?: string | null
+          data_inicio_plan?: string | null
+          data_inicio_real?: string | null
+          grupo_id?: string | null
           id?: string
           nome?: string
+          ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
+          responsavel?: string | null
+          status?: string | null
+          unidade?: string | null
           valor_total?: number
         }
         Relationships: [
@@ -627,6 +664,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
           },
         ]
       }
@@ -676,6 +727,93 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      impactos_fisico_financeiro: {
+        Row: {
+          acao_tomada: string | null
+          company_id: string
+          created_at: string | null
+          descricao: string | null
+          desvio_dias: number | null
+          desvio_percentual: number | null
+          id: string
+          impacto_financeiro: number | null
+          medicao_id: string | null
+          resolvido: boolean | null
+          resolvido_em: string | null
+          resolvido_por: string | null
+          servico_id: string | null
+          tipo: string
+        }
+        Insert: {
+          acao_tomada?: string | null
+          company_id: string
+          created_at?: string | null
+          descricao?: string | null
+          desvio_dias?: number | null
+          desvio_percentual?: number | null
+          id?: string
+          impacto_financeiro?: number | null
+          medicao_id?: string | null
+          resolvido?: boolean | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          servico_id?: string | null
+          tipo: string
+        }
+        Update: {
+          acao_tomada?: string | null
+          company_id?: string
+          created_at?: string | null
+          descricao?: string | null
+          desvio_dias?: number | null
+          desvio_percentual?: number | null
+          id?: string
+          impacto_financeiro?: number | null
+          medicao_id?: string | null
+          resolvido?: boolean | null
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          servico_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impactos_fisico_financeiro_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "medicoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_medicao_id_fkey"
+            columns: ["medicao_id"]
+            isOneToOne: false
+            referencedRelation: "vw_medicoes_financeiro"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
         ]
@@ -821,9 +959,12 @@ export type Database = {
           data_fim: string
           data_inicio: string
           data_liberacao: string | null
+          data_real_liberacao: string | null
           id: string
+          lancamento_receita_id: string | null
           numero: number
           observacoes: string | null
+          previsao_liberacao: string | null
           status: string | null
           updated_at: string | null
           valor_liberado: number | null
@@ -835,9 +976,12 @@ export type Database = {
           data_fim: string
           data_inicio: string
           data_liberacao?: string | null
+          data_real_liberacao?: string | null
           id?: string
+          lancamento_receita_id?: string | null
           numero: number
           observacoes?: string | null
+          previsao_liberacao?: string | null
           status?: string | null
           updated_at?: string | null
           valor_liberado?: number | null
@@ -849,9 +993,12 @@ export type Database = {
           data_fim?: string
           data_inicio?: string
           data_liberacao?: string | null
+          data_real_liberacao?: string | null
           id?: string
+          lancamento_receita_id?: string | null
           numero?: number
           observacoes?: string | null
+          previsao_liberacao?: string | null
           status?: string | null
           updated_at?: string | null
           valor_liberado?: number | null
@@ -863,6 +1010,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
             referencedColumns: ["id"]
           },
         ]
@@ -911,6 +1072,13 @@ export type Database = {
             columns: ["servico_id"]
             isOneToOne: false
             referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_metas_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
         ]
@@ -1436,6 +1604,85 @@ export type Database = {
           },
         ]
       }
+      vw_medicoes_financeiro: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          data_liberacao: string | null
+          data_real_liberacao: string | null
+          id: string | null
+          lancamento_receita_id: string | null
+          numero: number | null
+          observacoes: string | null
+          previsao_liberacao: string | null
+          status: string | null
+          status_financeiro: string | null
+          updated_at: string | null
+          valor_liberado: number | null
+          valor_planejado: number | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          data_liberacao?: string | null
+          data_real_liberacao?: string | null
+          id?: string | null
+          lancamento_receita_id?: string | null
+          numero?: number | null
+          observacoes?: string | null
+          previsao_liberacao?: string | null
+          status?: string | null
+          status_financeiro?: never
+          updated_at?: string | null
+          valor_liberado?: number | null
+          valor_planejado?: number | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          data_liberacao?: string | null
+          data_real_liberacao?: string | null
+          id?: string | null
+          lancamento_receita_id?: string | null
+          numero?: number | null
+          observacoes?: string | null
+          previsao_liberacao?: string | null
+          status?: string | null
+          status_financeiro?: never
+          updated_at?: string | null
+          valor_liberado?: number | null
+          valor_planejado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "vw_lancamentos_status"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_saldo_contas: {
         Row: {
           ativo: boolean | null
@@ -1457,6 +1704,94 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_servicos_situacao: {
+        Row: {
+          codigo: string | null
+          company_id: string | null
+          created_at: string | null
+          data_fim_plan: string | null
+          data_fim_real: string | null
+          data_inicio_plan: string | null
+          data_inicio_real: string | null
+          dias_atraso: number | null
+          grupo_id: string | null
+          id: string | null
+          nome: string | null
+          ordem: number | null
+          preco_unitario: number | null
+          quantidade: number | null
+          responsavel: string | null
+          situacao_calculada: string | null
+          status: string | null
+          unidade: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          codigo?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          data_fim_plan?: string | null
+          data_fim_real?: string | null
+          data_inicio_plan?: string | null
+          data_inicio_real?: string | null
+          dias_atraso?: never
+          grupo_id?: string | null
+          id?: string | null
+          nome?: string | null
+          ordem?: number | null
+          preco_unitario?: number | null
+          quantidade?: number | null
+          responsavel?: string | null
+          situacao_calculada?: never
+          status?: string | null
+          unidade?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          codigo?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          data_fim_plan?: string | null
+          data_fim_real?: string | null
+          data_inicio_plan?: string | null
+          data_inicio_real?: string | null
+          dias_atraso?: never
+          grupo_id?: string | null
+          id?: string | null
+          nome?: string | null
+          ordem?: number | null
+          preco_unitario?: number | null
+          quantidade?: number | null
+          responsavel?: string | null
+          situacao_calculada?: never
+          status?: string | null
+          unidade?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_servicos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
           },
         ]
       }

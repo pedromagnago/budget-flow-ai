@@ -11,7 +11,7 @@ import Login from "@/pages/auth/Login";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import AuditQueue from "@/pages/audit/AuditQueue";
 import ClientPortal from "@/pages/client/ClientPortal";
-import Schedule from "@/pages/schedule/Schedule";
+import PlanejamentoPage from "@/pages/planejamento/PlanejamentoPage";
 import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import ImportPage from "@/pages/import/ImportPage";
@@ -39,7 +39,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/audit" element={<AuditQueue />} />
               <Route path="/client" element={<ClientPortal />} />
-              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/planejamento" element={<PlanejamentoPage />} />
+              <Route path="/schedule" element={<Navigate to="/planejamento" replace />} />
               <Route path="/simulator" element={<Simulator />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/import" element={<ImportPage />} />
