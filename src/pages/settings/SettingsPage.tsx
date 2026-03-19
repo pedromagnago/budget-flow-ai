@@ -93,8 +93,8 @@ export default function SettingsPage() {
       score_minimo_auto_approve: iaConfig.score_auto / 100,
       auto_approve_ativo: iaConfig.auto_active,
       incluir_exemplos_correcao: iaConfig.include_examples,
-      dias_sync_omie: syncDias,
       limiar_desvio_alerta: desvioLimiar / 100,
+    };
     };
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
