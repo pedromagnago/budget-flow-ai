@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,11 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
 import { useCronogramaServicos, useMedicoes, useMedicoesMetas, useAvancoFisico } from '@/hooks/useSchedule';
 import { useSaveAvancoWithTriggers, type TriggerResult } from '@/hooks/usePlanejamento';
 import { ImpactBanner } from './ImpactBanner';
-import { formatCurrencyCompact } from '@/lib/formatters';
+import { ServiceHistoryDrawer } from './ServiceHistoryDrawer';
+import { formatCurrencyCompact, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
 
 function getCellColor(meta: number, real: number) {
@@ -50,11 +52,38 @@ export function AvancoFisicoTab() {
     responsavel: '', observacao: '',
   });
 
+  // Keyboard navigation
+  const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Service history drawer
+  const [historyServiceId, setHistoryServiceId] = useState<string | null>(null);
+  const [historyServiceName, setHistoryServiceName] = useState('');
+
   const avancoMap = useMemo(() => {
     const map: Record<string, number> = {};
     (avancos ?? []).forEach(a => {
       const pct = a.percentual_real ?? 0;
       if (!map[a.servico_id] || pct > map[a.servico_id]) map[a.servico_id] = pct;
+    });
+    return map;
+  }, [avancos]);
+
+  // Mini-history for tooltips
+  const avancoHistory = useMemo(() => {
+    const map: Record<string, { data: string; casas: number; pct: number; obs: string | null }[]> = {};
+    (avancos ?? []).forEach(a => {
+      if (!map[a.servico_id]) map[a.servico_id] = [];
+      map[a.servico_id].push({
+        data: a.data_registro,
+        casas: a.casas_concluidas,
+        pct: a.percentual_real ?? 0,
+        obs: a.observacoes,
+      });
+    });
+    // Sort and keep last 3
+    Object.keys(map).forEach(k => {
+      map[k] = map[k].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 3);
     });
     return map;
   }, [avancos]);
@@ -99,6 +128,38 @@ export function AvancoFisicoTab() {
     });
   }
 
+  // Keyboard handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!selectedCell || drawer) return;
+    const { row, col } = selectedCell;
+    const maxRow = filtered.length - 1;
+    const maxCol = medicaoNumbers.length - 1;
+
+    if (e.key === 'ArrowUp' && row > 0) { e.preventDefault(); setSelectedCell({ row: row - 1, col }); }
+    else if (e.key === 'ArrowDown' && row < maxRow) { e.preventDefault(); setSelectedCell({ row: row + 1, col }); }
+    else if (e.key === 'ArrowLeft' && col > 0) { e.preventDefault(); setSelectedCell({ row, col: col - 1 }); }
+    else if (e.key === 'ArrowRight' && col < maxCol) { e.preventDefault(); setSelectedCell({ row, col: col + 1 }); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const servico = filtered[row];
+      const medNum = medicaoNumbers[col];
+      if (servico && medNum !== undefined) {
+        openDrawer(servico.id, servico.nome, medNum, servico.quantidade ?? 64, null, null, null, servico.valor_total);
+      }
+    }
+    else if (e.key === 'Escape') { setSelectedCell(null); }
+    else if (e.key === 'Tab') {
+      e.preventDefault();
+      if (col < maxCol) setSelectedCell({ row, col: col + 1 });
+      else if (row < maxRow) setSelectedCell({ row: row + 1, col: 0 });
+    }
+  }, [selectedCell, filtered, medicaoNumbers, drawer]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   async function handleSaveAvanco() {
     if (!drawer) return;
     const casas = drawerForm.usePercentual
@@ -137,190 +198,209 @@ export function AvancoFisicoTab() {
   if (ls || lm) return <div className="p-4"><SkeletonTable rows={10} cols={10} /></div>;
 
   return (
-    <div className="space-y-4">
-      {/* Trigger banner */}
-      {triggerResult && triggerResult.type !== 'none' && (
-        <ImpactBanner
-          result={triggerResult}
-          onDismiss={() => setTriggerResult(null)}
-          onNavigateImpacto={() => {
-            setTriggerResult(null);
-            // Navigate to impacto tab - parent handles this via URL or tab state
-            const tabTrigger = document.querySelector('[value="impacto"]') as HTMLElement;
-            tabTrigger?.click();
-          }}
-          onRequestEarlyMeasurement={() => {
-            setTriggerResult(null);
-            const tabTrigger = document.querySelector('[value="medicoes"]') as HTMLElement;
-            tabTrigger?.click();
+    <TooltipProvider>
+      <div className="space-y-4">
+        {/* Trigger banner */}
+        {triggerResult && triggerResult.type !== 'none' && (
+          <ImpactBanner
+            result={triggerResult}
+            onDismiss={() => setTriggerResult(null)}
+            onNavigateImpacto={() => {
+              setTriggerResult(null);
+              const tabTrigger = document.querySelector('[value="impacto"]') as HTMLElement;
+              tabTrigger?.click();
+            }}
+            onRequestEarlyMeasurement={() => {
+              setTriggerResult(null);
+              const tabTrigger = document.querySelector('[value="medicoes"]') as HTMLElement;
+              tabTrigger?.click();
+            }}
+          />
+        )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Input className="h-8 w-64 text-xs" placeholder="Buscar serviço..." value={search} onChange={e => setSearch(e.target.value)} />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="concluido">Concluídos</SelectItem>
+              <SelectItem value="em_andamento">Em andamento</SelectItem>
+              <SelectItem value="atrasado">Atrasados</SelectItem>
+              <SelectItem value="futuro">Futuros</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-[10px] text-muted-foreground ml-auto">Use setas ↑↓←→ para navegar · Enter para registrar</span>
+        </div>
+
+        <div className="bg-card border rounded-xl shadow-card overflow-auto">
+          <table ref={tableRef} className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="text-left py-2 px-3 sticky left-0 bg-muted/50 z-10 min-w-[220px]">Serviço</th>
+                {medicaoNumbers.map(n => (
+                  <th key={n} className="text-center py-2 px-3 min-w-[90px]">M{n}</th>
+                ))}
+                <th className="text-center py-2 px-3 min-w-[80px]">% Geral</th>
+              </tr>
+              <tr className="bg-muted/30 border-b">
+                <td className="text-left py-1 px-3 sticky left-0 bg-muted/30 z-10 text-[10px] text-muted-foreground font-medium">Planejado (R$)</td>
+                {medicaoNumbers.map(n => (
+                  <td key={n} className="text-center py-1 px-3 text-[10px] font-mono text-muted-foreground">
+                    {formatCurrencyCompact(medicaoValorMap[n] ?? 0)}
+                  </td>
+                ))}
+                <td />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((servico, rowIdx) => {
+                const realPct = avancoMap[servico.id] ?? 0;
+                const totalMeta = medicaoNumbers.reduce((s, n) => s + (metaMap[`${servico.id}_${n}`] ?? 0), 0);
+                const pctGeral = totalMeta > 0 ? Math.min((realPct / totalMeta) * 100, 100) : (realPct > 0 ? 100 : 0);
+                const statusColor = pctGeral >= 100 ? 'bg-consumido' : pctGeral >= 80 ? 'bg-module-dashboard' : pctGeral > 0 ? 'bg-destructive' : 'bg-muted';
+                const history = avancoHistory[servico.id];
+
+                return (
+                  <tr key={servico.id} className="border-t hover:bg-muted/20 transition-colors">
+                    <td className="py-2 px-3 sticky left-0 bg-card z-10">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="space-y-1 cursor-pointer"
+                            onClick={() => {
+                              setHistoryServiceId(servico.id);
+                              setHistoryServiceName(servico.nome);
+                            }}
+                          >
+                            <p className="text-xs font-medium hover:text-primary transition-colors">{servico.nome}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
+                                <div className={`h-full rounded-full ${statusColor}`} style={{ width: `${Math.min(pctGeral, 100)}%` }} />
+                              </div>
+                              <span className="text-[10px] font-mono text-muted-foreground">{pctGeral.toFixed(0)}%</span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        {history && history.length > 0 && (
+                          <TooltipContent side="right" className="max-w-[220px] p-2 space-y-1">
+                            <p className="text-[10px] font-semibold mb-1">Últimos registros</p>
+                            {history.map((h, i) => (
+                              <p key={i} className="text-[10px] text-muted-foreground">
+                                {formatDate(h.data)} · {h.casas} casas · {h.pct.toFixed(0)}%
+                              </p>
+                            ))}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </td>
+                    {medicaoNumbers.map((n, colIdx) => {
+                      const meta = metaMap[`${servico.id}_${n}`];
+                      const isSelected = selectedCell?.row === rowIdx && selectedCell?.col === colIdx;
+                      if (meta === undefined) return (
+                        <td
+                          key={n}
+                          className={cn('py-2 px-3 text-center text-muted-foreground/30', isSelected && 'ring-2 ring-primary ring-inset')}
+                          onClick={() => setSelectedCell({ row: rowIdx, col: colIdx })}
+                        >—</td>
+                      );
+                      const cellReal = realPct >= totalMeta ? meta : Math.min(realPct, meta);
+                      return (
+                        <td key={n} className="py-1 px-2 text-center">
+                          <div
+                            className={cn(
+                              'rounded px-2 py-1 text-[11px] font-mono cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all',
+                              getCellColor(meta, cellReal),
+                              isSelected && 'ring-2 ring-primary'
+                            )}
+                            onClick={() => {
+                              setSelectedCell({ row: rowIdx, col: colIdx });
+                              openDrawer(servico.id, servico.nome, n, servico.quantidade ?? 64, null, null, null, servico.valor_total);
+                            }}
+                          >
+                            {cellReal.toFixed(0)}% / {meta.toFixed(0)}%
+                          </div>
+                        </td>
+                      );
+                    })}
+                    <td className="py-2 px-3 text-center font-mono text-xs font-bold">{pctGeral.toFixed(0)}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Drawer de registro de avanço */}
+        <Sheet open={drawer !== null} onOpenChange={() => setDrawer(null)}>
+          <SheetContent className="w-[380px] sm:w-[420px] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="text-base">Registrar Avanço</SheetTitle>
+            </SheetHeader>
+            {drawer && (
+              <div className="space-y-5 mt-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Serviço</p>
+                  <p className="text-sm font-medium">{drawer.servicoNome}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Medição</p>
+                  <p className="text-sm font-medium font-mono">M{drawer.medicaoNumero}</p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Entrada por percentual</Label>
+                  <Switch checked={drawerForm.usePercentual} onCheckedChange={v => setDrawerForm(f => ({ ...f, usePercentual: v }))} />
+                </div>
+
+                {drawerForm.usePercentual ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Percentual concluído</Label>
+                    <Input type="number" min={0} max={100} step={0.1} value={drawerForm.percentual} onChange={e => setDrawerForm(f => ({ ...f, percentual: e.target.value }))} className="h-9 text-sm font-mono" />
+                    <p className="text-[10px] text-muted-foreground">≈ {Math.round((parseFloat(drawerForm.percentual) / 100) * drawer.qtdTotal)} de {drawer.qtdTotal} casas</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Casas concluídas</Label>
+                    <Input type="number" min={0} max={drawer.qtdTotal} value={drawerForm.casas} onChange={e => setDrawerForm(f => ({ ...f, casas: parseInt(e.target.value) || 0 }))} className="h-9 text-sm font-mono" />
+                    <p className="text-[10px] text-muted-foreground">Total: {drawer.qtdTotal} — {drawer.qtdTotal > 0 ? ((drawerForm.casas / drawer.qtdTotal) * 100).toFixed(1) : 0}%</p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Data do registro</Label>
+                  <Input type="date" value={drawerForm.data} onChange={e => setDrawerForm(f => ({ ...f, data: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Responsável</Label>
+                  <Input value={drawerForm.responsavel} onChange={e => setDrawerForm(f => ({ ...f, responsavel: e.target.value }))} className="h-9 text-sm" placeholder="Nome do responsável" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Observação</Label>
+                  <Textarea value={drawerForm.observacao} onChange={e => setDrawerForm(f => ({ ...f, observacao: e.target.value }))} rows={3} placeholder="Detalhes do avanço..." />
+                </div>
+
+                <Button className="w-full" onClick={handleSaveAvanco} disabled={saveAvancoMut.isPending}>
+                  Salvar Avanço
+                </Button>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Service History Drawer */}
+        <ServiceHistoryDrawer
+          servicoId={historyServiceId}
+          servicoNome={historyServiceName}
+          onClose={() => setHistoryServiceId(null)}
+          onNavigateServicos={() => {
+            setHistoryServiceId(null);
+            const tab = document.querySelector('[value="servicos"]') as HTMLElement;
+            tab?.click();
           }}
         />
-      )}
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Input className="h-8 w-64 text-xs" placeholder="Buscar serviço..." value={search} onChange={e => setSearch(e.target.value)} />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="concluido">Concluídos</SelectItem>
-            <SelectItem value="em_andamento">Em andamento</SelectItem>
-            <SelectItem value="atrasado">Atrasados</SelectItem>
-            <SelectItem value="futuro">Futuros</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
-
-      <div className="bg-card border rounded-xl shadow-card overflow-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50">
-              <th className="text-left py-2 px-3 sticky left-0 bg-muted/50 z-10 min-w-[220px]">Serviço</th>
-              {medicaoNumbers.map(n => (
-                <th key={n} className="text-center py-2 px-3 min-w-[90px]">M{n}</th>
-              ))}
-              <th className="text-center py-2 px-3 min-w-[80px]">% Geral</th>
-            </tr>
-            <tr className="bg-muted/30 border-b">
-              <td className="text-left py-1 px-3 sticky left-0 bg-muted/30 z-10 text-[10px] text-muted-foreground font-medium">Planejado (R$)</td>
-              {medicaoNumbers.map(n => (
-                <td key={n} className="text-center py-1 px-3 text-[10px] font-mono text-muted-foreground">
-                  {formatCurrencyCompact(medicaoValorMap[n] ?? 0)}
-                </td>
-              ))}
-              <td />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(servico => {
-              const realPct = avancoMap[servico.id] ?? 0;
-              const totalMeta = medicaoNumbers.reduce((s, n) => s + (metaMap[`${servico.id}_${n}`] ?? 0), 0);
-              const pctGeral = totalMeta > 0 ? Math.min((realPct / totalMeta) * 100, 100) : (realPct > 0 ? 100 : 0);
-              const statusColor = pctGeral >= 100 ? 'bg-consumido' : pctGeral >= 80 ? 'bg-module-dashboard' : pctGeral > 0 ? 'bg-destructive' : 'bg-muted';
-
-              return (
-                <tr key={servico.id} className="border-t hover:bg-muted/20 transition-colors">
-                  <td className="py-2 px-3 sticky left-0 bg-card z-10">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium">{servico.nome}</p>
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
-                          <div className={`h-full rounded-full ${statusColor}`} style={{ width: `${Math.min(pctGeral, 100)}%` }} />
-                        </div>
-                        <span className="text-[10px] font-mono text-muted-foreground">{pctGeral.toFixed(0)}%</span>
-                      </div>
-                    </div>
-                  </td>
-                  {medicaoNumbers.map(n => {
-                    const meta = metaMap[`${servico.id}_${n}`];
-                    if (meta === undefined) return <td key={n} className="py-2 px-3 text-center text-muted-foreground/30">—</td>;
-                    const cellReal = realPct >= totalMeta ? meta : Math.min(realPct, meta);
-                    return (
-                      <td key={n} className="py-1 px-2 text-center">
-                        <div
-                          className={cn('rounded px-2 py-1 text-[11px] font-mono cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all', getCellColor(meta, cellReal))}
-                          onClick={() => openDrawer(
-                            servico.id,
-                            servico.nome,
-                            n,
-                            servico.quantidade ?? 64,
-                            null, // grupoId not available on CronogramaServico, but available on ServicoSituacao
-                            null,
-                            null,
-                            servico.valor_total,
-                          )}
-                        >
-                          {cellReal.toFixed(0)}% / {meta.toFixed(0)}%
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-3 text-center font-mono text-xs font-bold">{pctGeral.toFixed(0)}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Drawer de registro de avanço */}
-      <Sheet open={drawer !== null} onOpenChange={() => setDrawer(null)}>
-        <SheetContent className="w-[380px] sm:w-[420px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-base">Registrar Avanço</SheetTitle>
-          </SheetHeader>
-          {drawer && (
-            <div className="space-y-5 mt-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Serviço</p>
-                <p className="text-sm font-medium">{drawer.servicoNome}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Medição</p>
-                <p className="text-sm font-medium font-mono">M{drawer.medicaoNumero}</p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Entrada por percentual</Label>
-                <Switch
-                  checked={drawerForm.usePercentual}
-                  onCheckedChange={v => setDrawerForm(f => ({ ...f, usePercentual: v }))}
-                />
-              </div>
-
-              {drawerForm.usePercentual ? (
-                <div className="space-y-2">
-                  <Label className="text-xs">Percentual concluído</Label>
-                  <Input
-                    type="number"
-                    min={0} max={100} step={0.1}
-                    value={drawerForm.percentual}
-                    onChange={e => setDrawerForm(f => ({ ...f, percentual: e.target.value }))}
-                    className="h-9 text-sm font-mono"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    ≈ {Math.round((parseFloat(drawerForm.percentual) / 100) * drawer.qtdTotal)} de {drawer.qtdTotal} casas
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label className="text-xs">Casas concluídas</Label>
-                  <Input
-                    type="number"
-                    min={0} max={drawer.qtdTotal}
-                    value={drawerForm.casas}
-                    onChange={e => setDrawerForm(f => ({ ...f, casas: parseInt(e.target.value) || 0 }))}
-                    className="h-9 text-sm font-mono"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Total: {drawer.qtdTotal} — {drawer.qtdTotal > 0 ? ((drawerForm.casas / drawer.qtdTotal) * 100).toFixed(1) : 0}%
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label className="text-xs">Data do registro</Label>
-                <Input type="date" value={drawerForm.data} onChange={e => setDrawerForm(f => ({ ...f, data: e.target.value }))} className="h-9 text-sm" />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Responsável</Label>
-                <Input value={drawerForm.responsavel} onChange={e => setDrawerForm(f => ({ ...f, responsavel: e.target.value }))} className="h-9 text-sm" placeholder="Nome do responsável" />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Observação</Label>
-                <Textarea value={drawerForm.observacao} onChange={e => setDrawerForm(f => ({ ...f, observacao: e.target.value }))} rows={3} placeholder="Detalhes do avanço..." />
-              </div>
-
-              <Button className="w-full" onClick={handleSaveAvanco} disabled={saveAvancoMut.isPending}>
-                Salvar Avanço
-              </Button>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
-    </div>
+    </TooltipProvider>
   );
 }
