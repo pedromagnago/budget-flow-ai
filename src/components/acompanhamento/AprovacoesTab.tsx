@@ -37,7 +37,7 @@ export function AprovacoesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lancamentos')
-        .select('id, observacao, valor, data_vencimento, status, e_previsao, orcamento_item_id, fornecedor_id, tipo')
+        .select('id, observacao, valor, data_vencimento, situacao, e_previsao, orcamento_item_id, fornecedor_id, tipo')
         .eq('company_id', companyId!);
       if (error) throw error;
       return data ?? [];
