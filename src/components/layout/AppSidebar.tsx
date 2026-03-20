@@ -15,7 +15,7 @@ import {
   LogOut,
   FileText,
   FileBarChart,
-  Truck,
+  ClipboardCheck,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,7 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'OBRA',
     items: [
       { title: 'Planejamento', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
-      { title: 'Fornecedores', href: '/fornecedores', icon: Truck, roles: ['supervisor', 'super_admin'] },
+      { title: 'Acompanhamento', href: '/acompanhamento', icon: ClipboardCheck, roles: ['operador', 'supervisor', 'super_admin'] },
     ],
   },
   {

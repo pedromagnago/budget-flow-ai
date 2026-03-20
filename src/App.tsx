@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard/Dashboard";
 import AuditQueue from "@/pages/audit/AuditQueue";
 import ClientPortal from "@/pages/client/ClientPortal";
 import PlanejamentoPage from "@/pages/planejamento/PlanejamentoPage";
+import AcompanhamentoPage from "@/pages/acompanhamento/AcompanhamentoPage";
 import BankingPage from "@/pages/banking/BankingPage";
 import Simulator from "@/pages/simulator/Simulator";
 import SettingsPage from "@/pages/settings/SettingsPage";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/audit" element={<AuditQueue />} />
               <Route path="/client" element={<ClientPortal />} />
               <Route path="/planejamento" element={<PlanejamentoPage />} />
+              <Route path="/acompanhamento" element={<AcompanhamentoPage />} />
               <Route path="/fornecedores" element={<FornecedoresPage />} />
               <Route path="/financeiro" element={<FinanceiroPage />} />
               <Route path="/notificacoes" element={<NotificacoesPage />} />

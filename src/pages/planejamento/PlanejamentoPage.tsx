@@ -2,9 +2,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EtapasOrcamentoTab } from '@/components/planejamento/EtapasOrcamentoTab';
 import { VisaoGeralTab } from '@/components/planejamento/VisaoGeralTab';
 import { ServicosTab } from '@/components/planejamento/ServicosTab';
-import { MedicoesTab } from '@/components/planejamento/MedicoesTab';
-import { AvancoFisicoTab } from '@/components/planejamento/AvancoFisicoTab';
-import { ImpactoFinanceiroTab } from '@/components/planejamento/ImpactoFinanceiroTab';
 import { QuickActionBar } from '@/components/planejamento/QuickActionBar';
 
 export default function PlanejamentoPage() {
@@ -17,19 +14,13 @@ export default function PlanejamentoPage() {
       <Tabs defaultValue="etapas" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="etapas">Etapas e Orçamento</TabsTrigger>
-          <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
           <TabsTrigger value="servicos">Serviços</TabsTrigger>
-          <TabsTrigger value="medicoes">Medições</TabsTrigger>
-          <TabsTrigger value="avanco">Avanço Físico</TabsTrigger>
-          <TabsTrigger value="impacto">Impacto Financeiro</TabsTrigger>
+          <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
         </TabsList>
 
         <TabsContent value="etapas"><EtapasOrcamentoTab /></TabsContent>
-        <TabsContent value="visao-geral"><VisaoGeralTab /></TabsContent>
         <TabsContent value="servicos"><ServicosTab /></TabsContent>
-        <TabsContent value="medicoes"><MedicoesTab /></TabsContent>
-        <TabsContent value="avanco"><AvancoFisicoTab /></TabsContent>
-        <TabsContent value="impacto"><ImpactoFinanceiroTab /></TabsContent>
+        <TabsContent value="visao-geral"><VisaoGeralTab /></TabsContent>
       </Tabs>
     </div>
   );

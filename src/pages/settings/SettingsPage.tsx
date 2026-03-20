@@ -9,13 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil, Search, Truck } from 'lucide-react';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
   useUserRoles, useInviteUser, useUpdateUserRole,
 } from '@/hooks/useSettings';
 import { useFormasPagamento, useCreateFormaPagamento, useUpdateFormaPagamento, useDeleteFormaPagamento } from '@/hooks/useFormasPagamento';
+import { useFornecedores, useCreateFornecedor, useUpdateFornecedor, useDeactivateFornecedor } from '@/hooks/useFornecedores';
+import { CATEGORIA_FORNECEDOR_LABELS } from '@/lib/constants';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { STATUS_COLORS } from '@/lib/constants';
 import type { Json } from '@/integrations/supabase/types';
@@ -56,6 +58,18 @@ export default function SettingsPage() {
   const [newForma, setNewForma] = useState({ nome: '', tipo: 'pix', parcelas_padrao: '1' });
   const [editingFormaId, setEditingFormaId] = useState<string | null>(null);
   const [editFormaValues, setEditFormaValues] = useState({ nome: '', tipo: '', parcelas_padrao: '' });
+
+  // ── Fornecedores state ──
+  const { data: fornecedores, isLoading: loadingForn } = useFornecedores();
+  const createFornecedor = useCreateFornecedor();
+  const updateFornecedor = useUpdateFornecedor();
+  const deactivateFornecedor = useDeactivateFornecedor();
+  const [fornSearch, setFornSearch] = useState('');
+  const [fornDialog, setFornDialog] = useState(false);
+  const [editFornId, setEditFornId] = useState<string | null>(null);
+  const [fornForm, setFornForm] = useState({ razao_social: '', nome_fantasia: '', cnpj: '', email: '', telefone: '', categoria: '' as string, observacoes: '' });
+  const EMPTY_FORN = { razao_social: '', nome_fantasia: '', cnpj: '', email: '', telefone: '', categoria: '' as string, observacoes: '' };
+  const filteredForn = (fornecedores ?? []).filter(f => f.razao_social.toLowerCase().includes(fornSearch.toLowerCase()) || (f.cnpj ?? '').includes(fornSearch));
 
   // ── Project form state ──
   const [projectForm, setProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64, status: 'ativo' });
@@ -145,6 +159,7 @@ export default function SettingsPage() {
           <TabsTrigger value="ia" className="text-xs">IA</TabsTrigger>
           <TabsTrigger value="alerts" className="text-xs">Alertas</TabsTrigger>
           <TabsTrigger value="pagamento" className="text-xs">Formas de Pagamento</TabsTrigger>
+          <TabsTrigger value="fornecedores" className="text-xs">Fornecedores</TabsTrigger>
           <TabsTrigger value="users" className="text-xs">Usuários</TabsTrigger>
         </TabsList>
 
@@ -562,6 +577,119 @@ export default function SettingsPage() {
                 {inviteUser.isPending ? 'Criando...' : 'Criar Usuário'}
               </Button>
             </div>
+          </SectionCard>
+        </TabsContent>
+
+        {/* ── Fornecedores ── */}
+        <TabsContent value="fornecedores">
+          <SectionCard title="Cadastro de Fornecedores" icon={Truck}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar..." value={fornSearch} onChange={e => setFornSearch(e.target.value)} className="pl-9" />
+              </div>
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => { setEditFornId(null); setFornForm(EMPTY_FORN); setFornDialog(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Novo
+              </Button>
+            </div>
+
+            {loadingForn ? <Skeleton className="h-40 w-full" /> : filteredForn.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Nenhum fornecedor cadastrado</p>
+            ) : (
+              <div className="border rounded-lg overflow-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50 text-left">
+                      <th className="py-2 px-3 font-medium text-xs">Razão Social</th>
+                      <th className="py-2 px-3 font-medium text-xs">CNPJ</th>
+                      <th className="py-2 px-3 font-medium text-xs">Categoria</th>
+                      <th className="py-2 px-3 font-medium text-xs">Contato</th>
+                      <th className="py-2 px-3 font-medium text-xs text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredForn.map(f => (
+                      <tr key={f.id} className="border-t hover:bg-muted/20">
+                        <td className="py-2 px-3">
+                          <div className="font-medium text-xs">{f.razao_social}</div>
+                          {f.nome_fantasia && <div className="text-[10px] text-muted-foreground">{f.nome_fantasia}</div>}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-xs">{f.cnpj ?? '—'}</td>
+                        <td className="py-2 px-3 text-xs">
+                          {f.categoria ? <Badge variant="outline" className="text-[10px]">{CATEGORIA_FORNECEDOR_LABELS[f.categoria as keyof typeof CATEGORIA_FORNECEDOR_LABELS] ?? f.categoria}</Badge> : '—'}
+                        </td>
+                        <td className="py-2 px-3 text-xs">{f.email ?? f.telefone ?? '—'}</td>
+                        <td className="py-2 px-3 text-center">
+                          <div className="flex justify-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                              setEditFornId(f.id);
+                              setFornForm({ razao_social: f.razao_social, nome_fantasia: f.nome_fantasia ?? '', cnpj: f.cnpj ?? '', email: f.email ?? '', telefone: f.telefone ?? '', categoria: (f.categoria ?? '') as string, observacoes: f.observacoes ?? '' });
+                              setFornDialog(true);
+                            }}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deactivateFornecedor.mutate(f.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Fornecedor Dialog */}
+            {fornDialog && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setFornDialog(false)}>
+                <div className="bg-card rounded-xl p-6 w-full max-w-lg shadow-xl space-y-4" onClick={e => e.stopPropagation()}>
+                  <h3 className="font-semibold">{editFornId ? 'Editar Fornecedor' : 'Novo Fornecedor'}</h3>
+                  <div className="grid gap-3">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Razão Social *</Label>
+                      <Input value={fornForm.razao_social} onChange={e => setFornForm(p => ({ ...p, razao_social: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs">Nome Fantasia</Label>
+                        <Input value={fornForm.nome_fantasia} onChange={e => setFornForm(p => ({ ...p, nome_fantasia: e.target.value }))} />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs">CNPJ</Label>
+                        <Input value={fornForm.cnpj} onChange={e => setFornForm(p => ({ ...p, cnpj: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs">Email</Label>
+                        <Input value={fornForm.email} onChange={e => setFornForm(p => ({ ...p, email: e.target.value }))} />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs">Telefone</Label>
+                        <Input value={fornForm.telefone} onChange={e => setFornForm(p => ({ ...p, telefone: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Categoria</Label>
+                      <Select value={fornForm.categoria} onValueChange={v => setFornForm(p => ({ ...p, categoria: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(CATEGORIA_FORNECEDOR_LABELS).map(([k, label]) => (
+                            <SelectItem key={k} value={k}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setFornDialog(false)}>Cancelar</Button>
+                    <Button size="sm" disabled={!fornForm.razao_social.trim()} onClick={async () => {
+                      const payload = { razao_social: fornForm.razao_social.trim(), nome_fantasia: fornForm.nome_fantasia.trim() || undefined, cnpj: fornForm.cnpj.trim() || undefined, email: fornForm.email.trim() || undefined, telefone: fornForm.telefone.trim() || undefined, categoria: (fornForm.categoria || undefined) as any, observacoes: fornForm.observacoes.trim() || undefined };
+                      if (editFornId) await updateFornecedor.mutateAsync({ id: editFornId, ...payload });
+                      else await createFornecedor.mutateAsync(payload);
+                      setFornDialog(false);
+                    }}>{editFornId ? 'Salvar' : 'Cadastrar'}</Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </SectionCard>
         </TabsContent>
       </Tabs>

@@ -37,7 +37,7 @@ export default function FinanceiroPage() {
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="pagar">A Pagar</TabsTrigger>
           <TabsTrigger value="receber">A Receber</TabsTrigger>
-          <TabsTrigger value="planejamento">Planejamento</TabsTrigger>
+          <TabsTrigger value="planejamento">Previsões</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pipeline">
@@ -75,7 +75,7 @@ export default function FinanceiroPage() {
             <DropdownMenuItem onClick={() => { setTab('planejamento'); }}>
               <TrendingUp className="h-4 w-4 mr-2" /> Nova previsão
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/banking')}>
+            <DropdownMenuItem onClick={() => { setTab('pipeline'); }}>
               <ArrowLeftRight className="h-4 w-4 mr-2" /> Nova transferência
             </DropdownMenuItem>
           </DropdownMenuContent>
