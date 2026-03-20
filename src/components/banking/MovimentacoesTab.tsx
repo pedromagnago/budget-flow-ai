@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Check, X } from 'lucide-react';
+import { Plus, Pencil, Check, X, Upload, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
+import { parseOFX } from '@/lib/ofxParser';
 
 interface EditingCell { id: string; field: string; value: string; }
 
@@ -65,7 +66,12 @@ export function MovimentacoesTab() {
   const [newForm, setNewForm] = useState({
     conta_id: '', data: new Date().toISOString().split('T')[0], tipo: 'saida',
     descricao: '', valor: '', fornecedor: '', documento: '', categoria: '', observacao: '',
+    conta_destino_id: '',
   });
+
+  // OFX Import state
+  const [ofxPreview, setOfxPreview] = useState<{ transactions: { date: string; memo: string; amount: number; fitid: string }[]; contaId: string; accountInfo: string } | null>(null);
+  const [ofxSelected, setOfxSelected] = useState<Set<number>>(new Set());
 
   const list = movs ?? [];
   const total = list.reduce((s, m) => s + m.valor, 0);
@@ -81,7 +87,7 @@ export function MovimentacoesTab() {
       });
       toast.success('Movimentação criada');
       setModal(false);
-      setNewForm({ conta_id: '', data: new Date().toISOString().split('T')[0], tipo: 'saida', descricao: '', valor: '', fornecedor: '', documento: '', categoria: '', observacao: '' });
+      setNewForm({ conta_id: '', data: new Date().toISOString().split('T')[0], tipo: 'saida', descricao: '', valor: '', fornecedor: '', documento: '', categoria: '', observacao: '', conta_destino_id: '' });
     } catch { toast.error('Erro ao criar'); }
   }
 
@@ -102,6 +108,50 @@ export function MovimentacoesTab() {
         conciliado_por: !m.conciliado ? user?.id : null,
       });
     } catch { toast.error('Erro'); }
+  }
+
+  // ── OFX Import ──
+  async function handleOFXFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const result = parseOFX(text);
+      if (result.transactions.length === 0) {
+        toast.error('Nenhuma transação encontrada no arquivo OFX');
+        return;
+      }
+      setOfxPreview({
+        transactions: result.transactions.map(t => ({ date: t.date, memo: t.memo, amount: t.amount, fitid: t.fitid })),
+        contaId: '',
+        accountInfo: `Banco: ${result.bankId || '—'} · Conta: ${result.accountId || '—'} · ${result.transactions.length} transações`,
+      });
+      setOfxSelected(new Set(result.transactions.map((_, i) => i)));
+      toast.success(`${result.transactions.length} transações carregadas do OFX`);
+    } catch { toast.error('Erro ao ler o arquivo OFX'); }
+    e.target.value = '';
+  }
+
+  async function importOFXTransactions() {
+    if (!ofxPreview?.contaId) { toast.error('Selecione a conta destino'); return; }
+    const selected = ofxPreview.transactions.filter((_, i) => ofxSelected.has(i));
+    if (selected.length === 0) { toast.error('Selecione ao menos uma transação'); return; }
+    let ok = 0;
+    for (const t of selected) {
+      try {
+        await createMut.mutateAsync({
+          conta_id: ofxPreview.contaId,
+          data: t.date,
+          tipo: t.amount >= 0 ? 'entrada' : 'saida',
+          descricao: t.memo || 'OFX Import',
+          valor: Math.abs(t.amount),
+          documento: t.fitid || undefined,
+        });
+        ok++;
+      } catch { /* skip individual errors */ }
+    }
+    toast.success(`${ok} movimentações importadas`);
+    setOfxPreview(null);
   }
 
   function renderEditableCell(m: Movimentacao, field: string, value: string | null) {
@@ -150,9 +200,15 @@ export function MovimentacoesTab() {
         <Input className="h-8 w-48 text-xs" placeholder="Buscar descrição/fornecedor..."
           value={filSearch} onChange={e => handleSearch(e.target.value)} />
         {hasFilters && <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>Limpar</Button>}
-        <Button size="sm" className="h-8 ml-auto" onClick={() => setModal(true)}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Nova
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <label className="cursor-pointer">
+            <input type="file" accept=".ofx,.OFX" className="hidden" onChange={handleOFXFile} />
+            <Button size="sm" variant="outline" className="h-8 gap-1" asChild><span><Upload className="h-3.5 w-3.5" /> Importar OFX</span></Button>
+          </label>
+          <Button size="sm" className="h-8" onClick={() => setModal(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Nova
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -256,6 +312,7 @@ export function MovimentacoesTab() {
                   <SelectContent>
                     <SelectItem value="entrada">Entrada</SelectItem>
                     <SelectItem value="saida">Saída</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -279,10 +336,81 @@ export function MovimentacoesTab() {
                 <Label className="text-xs">Observação</Label>
                 <Textarea value={newForm.observacao} onChange={e => setNewForm({ ...newForm, observacao: e.target.value })} rows={2} />
               </div>
+              {newForm.tipo === 'transferencia' && (
+                <div className="col-span-2 space-y-2">
+                  <Label className="text-xs flex items-center gap-1"><ArrowLeftRight className="h-3 w-3" /> Conta Destino *</Label>
+                  <Select value={newForm.conta_destino_id} onValueChange={v => setNewForm({ ...newForm, conta_destino_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a conta destino" /></SelectTrigger>
+                    <SelectContent>
+                      {(contas ?? []).filter(c => c.id !== newForm.conta_id).map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {newForm.tipo === 'transferencia' && (
+                <div className="col-span-2 space-y-2">
+                  <Label className="text-xs flex items-center gap-1"><ArrowLeftRight className="h-3 w-3" /> Conta Destino *</Label>
+                  <Select value={newForm.conta_destino_id} onValueChange={v => setNewForm({ ...newForm, conta_destino_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a conta destino" /></SelectTrigger>
+                    <SelectContent>
+                      {(contas ?? []).filter(c => c.id !== newForm.conta_id).map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" size="sm" onClick={() => setModal(false)}>Cancelar</Button>
               <Button size="sm" onClick={handleCreate} disabled={createMut.isPending}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal preview OFX */}
+      {ofxPreview && (
+        <Dialog open onOpenChange={() => setOfxPreview(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+            <DialogHeader><DialogTitle>Importar Extrato OFX</DialogTitle></DialogHeader>
+            <p className="text-xs text-muted-foreground">{ofxPreview.accountInfo}</p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Conta Destino *</Label>
+                <Select value={ofxPreview.contaId} onValueChange={v => setOfxPreview(p => p ? { ...p, contaId: v } : null)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
+                  <SelectContent>
+                    {(contas ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={ofxSelected.size === ofxPreview.transactions.length} onCheckedChange={c => {
+                  if (c) setOfxSelected(new Set(ofxPreview.transactions.map((_, i) => i)));
+                  else setOfxSelected(new Set());
+                }} />
+                <span className="text-xs text-muted-foreground">{ofxSelected.size} de {ofxPreview.transactions.length} selecionadas</span>
+              </div>
+              <div className="border rounded-lg max-h-60 overflow-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="bg-muted/50"><th className="py-1.5 px-2 w-8"></th><th className="py-1.5 px-2">Data</th><th className="py-1.5 px-2">Descrição</th><th className="py-1.5 px-2 text-right">Valor</th></tr></thead>
+                  <tbody>
+                    {ofxPreview.transactions.map((t, i) => (
+                      <tr key={i} className="border-t hover:bg-muted/20">
+                        <td className="py-1 px-2"><Checkbox checked={ofxSelected.has(i)} onCheckedChange={c => { const n = new Set(ofxSelected); c ? n.add(i) : n.delete(i); setOfxSelected(n); }} /></td>
+                        <td className="py-1 px-2 font-mono">{t.date}</td>
+                        <td className="py-1 px-2 truncate max-w-xs">{t.memo}</td>
+                        <td className={`py-1 px-2 text-right font-mono font-bold ${t.amount >= 0 ? 'text-consumido' : 'text-destructive'}`}>
+                          {t.amount >= 0 ? '+' : ''}{formatCurrency(t.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setOfxPreview(null)}>Cancelar</Button>
+              <Button size="sm" onClick={importOFXTransactions} disabled={createMut.isPending || !ofxPreview.contaId}>Importar {ofxSelected.size} transações</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
