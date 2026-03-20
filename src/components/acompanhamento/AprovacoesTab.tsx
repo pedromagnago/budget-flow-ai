@@ -37,7 +37,7 @@ export function AprovacoesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lancamentos')
-        .select('id, observacao, valor, data_vencimento, status, e_previsao, orcamento_item_id, fornecedor_id, tipo')
+        .select('id, observacao, valor, data_vencimento, situacao, e_previsao, orcamento_item_id, fornecedor_id, tipo')
         .eq('company_id', companyId!);
       if (error) throw error;
       return data ?? [];
@@ -100,7 +100,7 @@ export function AprovacoesTab() {
         subtitle: l.e_previsao ? 'Previsão do planejamento' : l.tipo === 'despesa' ? 'Despesa' : 'Receita',
         etapa,
         valor: l.valor,
-        status: l.status === 'pago' ? 'aprovado' : l.status === 'cancelado' ? 'reprovado' : 'pendente',
+        status: l.situacao === 'pago' ? 'aprovado' : l.situacao === 'cancelado' ? 'reprovado' : 'pendente',
         date: l.data_vencimento,
       });
     });
