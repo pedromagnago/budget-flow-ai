@@ -37,6 +37,7 @@ interface UsersTabProps {
 
 export function UsersTab({ userRoles, loadingRoles, updateUserRole, inviteUser }: UsersTabProps) {
   const { companyId } = useCompany();
+  const qc = useQueryClient();
   const [newUser, setNewUser] = useState({ email: '', password: '', role: 'operador' });
   const [showPassword, setShowPassword] = useState(false);
   const [assignRole, setAssignRole] = useState('operador');
