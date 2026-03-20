@@ -100,7 +100,7 @@ export function AprovacoesTab() {
         subtitle: l.e_previsao ? 'Previsão do planejamento' : l.tipo === 'despesa' ? 'Despesa' : 'Receita',
         etapa,
         valor: l.valor,
-        status: l.status === 'pago' ? 'aprovado' : l.status === 'cancelado' ? 'reprovado' : 'pendente',
+        status: l.situacao === 'pago' ? 'aprovado' : l.situacao === 'cancelado' ? 'reprovado' : 'pendente',
         date: l.data_vencimento,
       });
     });
