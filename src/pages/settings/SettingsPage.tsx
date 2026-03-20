@@ -9,13 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil } from 'lucide-react';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
   useUserRoles, useInviteUser, useUpdateUserRole,
 } from '@/hooks/useSettings';
-import { useBudgetSummary } from '@/hooks/useBudget';
+import { useFormasPagamento, useCreateFormaPagamento, useUpdateFormaPagamento, useDeleteFormaPagamento } from '@/hooks/useFormasPagamento';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { STATUS_COLORS } from '@/lib/constants';
 import type { Json } from '@/integrations/supabase/types';
@@ -49,7 +49,13 @@ export default function SettingsPage() {
   const { data: userRoles, isLoading: loadingRoles } = useUserRoles();
   const inviteUser = useInviteUser();
   const updateUserRole = useUpdateUserRole();
-  const { data: budgetGroups, isLoading: loadingBudget } = useBudgetSummary();
+  const { data: formasPgto, isLoading: loadingFormas } = useFormasPagamento();
+  const createForma = useCreateFormaPagamento();
+  const updateForma = useUpdateFormaPagamento();
+  const deleteForma = useDeleteFormaPagamento();
+  const [newForma, setNewForma] = useState({ nome: '', tipo: 'pix', parcelas_padrao: '1' });
+  const [editingFormaId, setEditingFormaId] = useState<string | null>(null);
+  const [editFormaValues, setEditFormaValues] = useState({ nome: '', tipo: '', parcelas_padrao: '' });
 
   // ── Project form state ──
   const [projectForm, setProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64, status: 'ativo' });
@@ -138,7 +144,7 @@ export default function SettingsPage() {
           <TabsTrigger value="categories" className="text-xs">Categorias</TabsTrigger>
           <TabsTrigger value="ia" className="text-xs">IA</TabsTrigger>
           <TabsTrigger value="alerts" className="text-xs">Alertas</TabsTrigger>
-          <TabsTrigger value="budget" className="text-xs">Orçamento</TabsTrigger>
+          <TabsTrigger value="pagamento" className="text-xs">Formas de Pagamento</TabsTrigger>
           <TabsTrigger value="users" className="text-xs">Usuários</TabsTrigger>
         </TabsList>
 
@@ -336,39 +342,100 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
-        {/* ── Orçamento ── */}
-        <TabsContent value="budget">
-          <SectionCard title="Resumo do Orçamento">
-            {loadingBudget ? (
+        {/* ── Formas de Pagamento ── */}
+        <TabsContent value="pagamento">
+          <SectionCard title="Formas de Pagamento" icon={CreditCard}>
+            {loadingFormas ? (
               <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
             ) : (
-              <div className="max-h-[400px] overflow-auto">
+              <div className="space-y-3">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-muted/80">
-                    <tr>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Grupo</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground text-xs">Orçado</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground text-xs">Consumido</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground text-xs">Saldo</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground text-xs">%</th>
+                  <thead>
+                    <tr className="bg-muted/30">
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Nome</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Tipo</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Parcelas</th>
+                      <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs w-20">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(budgetGroups ?? []).map(g => (
-                      <tr key={g.grupo_id} className="border-t hover:bg-muted/30">
-                        <td className="py-1.5 px-3 text-xs font-medium">{g.grupo}</td>
-                        <td className="py-1.5 px-3 text-right font-mono text-xs">{formatCurrency(g.valor_orcado)}</td>
-                        <td className="py-1.5 px-3 text-right font-mono text-xs">{formatCurrency(g.valor_consumido)}</td>
-                        <td className={`py-1.5 px-3 text-right font-mono text-xs ${g.valor_saldo < 0 ? 'text-destructive' : ''}`}>
-                          {formatCurrency(g.valor_saldo)}
-                        </td>
-                        <td className={`py-1.5 px-3 text-right font-mono text-xs ${g.pct_consumido > 1 ? 'text-destructive font-bold' : ''}`}>
-                          {(g.pct_consumido * 100).toFixed(1)}%
-                        </td>
+                    {(formasPgto ?? []).map(fp => (
+                      <tr key={fp.id} className="border-t hover:bg-muted/30">
+                        {editingFormaId === fp.id ? (
+                          <>
+                            <td className="py-1.5 px-3"><Input className="h-7 text-xs" value={editFormaValues.nome} onChange={e => setEditFormaValues(v => ({ ...v, nome: e.target.value }))} /></td>
+                            <td className="py-1.5 px-3">
+                              <Select value={editFormaValues.tipo} onValueChange={v => setEditFormaValues(p => ({ ...p, tipo: v }))}>
+                                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pix">PIX</SelectItem>
+                                  <SelectItem value="boleto">Boleto</SelectItem>
+                                  <SelectItem value="transferencia">Transferência</SelectItem>
+                                  <SelectItem value="cartao">Cartão</SelectItem>
+                                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                  <SelectItem value="cheque">Cheque</SelectItem>
+                                  <SelectItem value="outro">Outro</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="py-1.5 px-3 text-center"><Input type="number" className="h-7 text-xs w-16 mx-auto text-center" value={editFormaValues.parcelas_padrao} onChange={e => setEditFormaValues(v => ({ ...v, parcelas_padrao: e.target.value }))} /></td>
+                            <td className="py-1.5 px-3 text-center">
+                              <div className="flex gap-1 justify-center">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={async () => {
+                                  await updateForma.mutateAsync({ id: fp.id, nome: editFormaValues.nome, tipo: editFormaValues.tipo, parcelas_padrao: parseInt(editFormaValues.parcelas_padrao) || 1 });
+                                  setEditingFormaId(null);
+                                }}><span className="text-xs">✓</span></Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingFormaId(null)}><span className="text-xs">✕</span></Button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-1.5 px-3 text-xs font-medium">{fp.nome}</td>
+                            <td className="py-1.5 px-3"><Badge variant="outline" className="text-[10px]">{fp.tipo.toUpperCase()}</Badge></td>
+                            <td className="py-1.5 px-3 text-center font-mono text-xs">{fp.parcelas_padrao}x</td>
+                            <td className="py-1.5 px-3 text-center">
+                              <div className="flex gap-1 justify-center">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                                  setEditingFormaId(fp.id);
+                                  setEditFormaValues({ nome: fp.nome, tipo: fp.tipo, parcelas_padrao: String(fp.parcelas_padrao) });
+                                }}><Pencil className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteForma.mutate(fp.id)}><Trash2 className="h-3 w-3" /></Button>
+                              </div>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
+                {/* Add new forma */}
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Nova Forma de Pagamento</p>
+                  <div className="flex gap-2 items-end">
+                    <Input className="h-8 text-xs flex-1" placeholder="Nome" value={newForma.nome} onChange={e => setNewForma(v => ({ ...v, nome: e.target.value }))} />
+                    <Select value={newForma.tipo} onValueChange={v => setNewForma(p => ({ ...p, tipo: v }))}>
+                      <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="transferencia">Transferência</SelectItem>
+                        <SelectItem value="cartao">Cartão</SelectItem>
+                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        <SelectItem value="cheque">Cheque</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input type="number" className="h-8 text-xs w-16" placeholder="Parc." value={newForma.parcelas_padrao} onChange={e => setNewForma(v => ({ ...v, parcelas_padrao: e.target.value }))} />
+                    <Button size="sm" variant="outline" disabled={!newForma.nome || createForma.isPending} onClick={async () => {
+                      await createForma.mutateAsync({ nome: newForma.nome, tipo: newForma.tipo, parcelas_padrao: parseInt(newForma.parcelas_padrao) || 1 });
+                      setNewForma({ nome: '', tipo: 'pix', parcelas_padrao: '1' });
+                    }}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </SectionCard>

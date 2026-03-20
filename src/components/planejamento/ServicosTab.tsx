@@ -9,6 +9,8 @@ import { formatCurrency } from '@/lib/formatters';
 import { useServicosSituacao, useUpdateServicoPlanning, fetchLancamentosForReprogramming, useReprogramarLancamentos } from '@/hooks/usePlanejamento';
 import { useCreateServico, useDeleteServico, useAvancoFisico, useMedicoesMetas } from '@/hooks/useSchedule';
 import { useBudgetSummary } from '@/hooks/useBudget';
+import { useFornecedores } from '@/hooks/useFornecedores';
+import { useFormasPagamento } from '@/hooks/useFormasPagamento';
 import { useCompany } from '@/hooks/useCompany';
 import { ReprogramModal } from './ReprogramModal';
 import { toast } from 'sonner';
@@ -40,6 +42,8 @@ export function ServicosTab() {
   const { data: avancos } = useAvancoFisico();
   const { data: grupos } = useBudgetSummary();
   const { data: metas } = useMedicoesMetas();
+  const { data: fornecedores } = useFornecedores();
+  const { data: formasPgto } = useFormasPagamento();
   const { companyId } = useCompany();
   const [editing, setEditing] = useState<EditingCell | null>(null);
   const [adding, setAdding] = useState(false);
@@ -79,6 +83,18 @@ export function ServicosTab() {
     (grupos ?? []).forEach(g => { map[g.grupo_id] = g.grupo; });
     return map;
   }, [grupos]);
+
+  const fornecedorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (fornecedores ?? []).forEach(f => { map[f.id] = f.razao_social; });
+    return map;
+  }, [fornecedores]);
+
+  const formaPgtoMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (formasPgto ?? []).forEach(fp => { map[fp.id] = fp.nome; });
+    return map;
+  }, [formasPgto]);
 
   const list = servicos ?? [];
   const totalValor = list.reduce((s, sv) => s + sv.valor_total, 0);
@@ -170,15 +186,18 @@ export function ServicosTab() {
 
   function renderCell(id: string, field: string, value: string | number | null, opts?: { format?: (v: number) => string; type?: string }) {
     if (editing?.id === id && editing?.field === field) {
-      if (field === 'grupo_id') {
+      if (field === 'grupo_id' || field === 'fornecedor_id' || field === 'forma_pagamento_id') {
+        const options = field === 'grupo_id' ? (grupos ?? []).map(g => ({ value: g.grupo_id, label: g.grupo })) :
+          field === 'fornecedor_id' ? (fornecedores ?? []).map(f => ({ value: f.id, label: f.razao_social })) :
+          (formasPgto ?? []).map(fp => ({ value: fp.id, label: fp.nome }));
         return (
           <Select value={editing.value} onValueChange={async (v) => {
-            try { await updateMut.mutateAsync({ id, grupo_id: v || null }); } catch { toast.error('Erro'); }
+            try { await updateMut.mutateAsync({ id, [field]: v || null }); } catch { toast.error('Erro'); }
             setEditing(null);
           }}>
-            <SelectTrigger className="h-7 w-full text-xs"><SelectValue placeholder="Grupo" /></SelectTrigger>
+            <SelectTrigger className="h-7 w-full text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
             <SelectContent>
-              {(grupos ?? []).map(g => (<SelectItem key={g.grupo_id} value={g.grupo_id}>{g.grupo}</SelectItem>))}
+              {options.map(o => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}
             </SelectContent>
           </Select>
         );
@@ -195,8 +214,9 @@ export function ServicosTab() {
         />
       );
     }
-    if (field === 'grupo_id') {
-      const display = value ? grupoMap[String(value)] ?? '—' : '—';
+    if (field === 'grupo_id' || field === 'fornecedor_id' || field === 'forma_pagamento_id') {
+      const mapToUse = field === 'grupo_id' ? grupoMap : field === 'fornecedor_id' ? fornecedorMap : formaPgtoMap;
+      const display = value ? mapToUse[String(value)] ?? '—' : '—';
       return <span className="cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 transition-colors text-xs" onClick={() => startEdit(id, field, value)}>{display}</span>;
     }
     const display = opts?.format && typeof value === 'number' ? opts.format(value) : (value ?? '—');
@@ -223,6 +243,8 @@ export function ServicosTab() {
               <TableHead className="min-w-[160px]">Nome</TableHead>
               <TableHead className="w-12">Saúde</TableHead>
               <TableHead className="w-24">Grupo</TableHead>
+              <TableHead className="w-28">Fornecedor</TableHead>
+              <TableHead className="w-24">Forma Pgto</TableHead>
               <TableHead className="w-14">Unid.</TableHead>
               <TableHead className="text-right w-14">Qtd</TableHead>
               <TableHead className="text-right w-24">Vlr Unit.</TableHead>
@@ -265,6 +287,8 @@ export function ServicosTab() {
                       </button>
                     </TableCell>
                     <TableCell>{renderCell(sv.id, 'grupo_id', sv.grupo_id)}</TableCell>
+                    <TableCell>{renderCell(sv.id, 'fornecedor_id', (sv as any).fornecedor_id)}</TableCell>
+                    <TableCell>{renderCell(sv.id, 'forma_pagamento_id', (sv as any).forma_pagamento_id)}</TableCell>
                     <TableCell>{renderCell(sv.id, 'unidade', sv.unidade)}</TableCell>
                     <TableCell className="text-right">{renderCell(sv.id, 'quantidade', sv.quantidade, { type: 'number' })}</TableCell>
                     <TableCell className="text-right font-mono">{renderCell(sv.id, 'preco_unitario', sv.preco_unitario, { format: formatCurrency, type: 'number' })}</TableCell>
@@ -328,6 +352,8 @@ export function ServicosTab() {
                 <TableCell><Input className="h-7 text-xs" value={newRow.nome} onChange={e => setNewRow({ ...newRow, nome: e.target.value })} placeholder="Nome do serviço" /></TableCell>
                 <TableCell>⚪</TableCell>
                 <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                <TableCell className="text-xs text-muted-foreground">—</TableCell>
                 <TableCell className="text-xs">un</TableCell>
                 <TableCell><Input type="number" className="h-7 text-xs w-14 text-right" value={newRow.quantidade} onChange={e => setNewRow({ ...newRow, quantidade: e.target.value })} /></TableCell>
                 <TableCell className="text-xs text-muted-foreground">—</TableCell>
@@ -345,9 +371,9 @@ export function ServicosTab() {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={8} className="font-semibold text-xs">{list.length} serviços ativos · Avanço médio: {avgAvanco.toFixed(1)}%</TableCell>
+              <TableCell colSpan={10} className="font-semibold text-xs">{list.length} serviços ativos · Avanço médio: {avgAvanco.toFixed(1)}%</TableCell>
               <TableCell className="text-right font-mono text-xs font-bold">{formatCurrency(totalValor)}</TableCell>
-              <TableCell colSpan={7} />
+              <TableCell colSpan={9} />
             </TableRow>
           </TableFooter>
         </Table>

@@ -5,7 +5,6 @@ import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 import { useSidebarBadges } from '@/hooks/useSidebarBadges';
 import {
   BarChart3,
-  CheckSquare,
   HardHat,
   Landmark,
   DollarSign,
@@ -14,11 +13,9 @@ import {
   ChevronLeft,
   Building2,
   LogOut,
-  FileUp,
   FileText,
   FileBarChart,
   Truck,
-  Bell,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,32 +31,46 @@ interface NavItem {
   badgeKey?: 'pendingAudit';
 }
 
-const NAV_ITEMS: NavItem[] = [
-  // ── Painel Geral ──
-  { title: 'Painel Geral', href: '/dashboard', icon: BarChart3, roles: ['operador', 'supervisor', 'super_admin'] },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
 
-  // ── Planejamento ──
-  { title: 'Planejamento', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
-  { title: 'Fornecedores', href: '/fornecedores', icon: Truck, roles: ['supervisor', 'super_admin'] },
-  { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
-
-  // ── Financeiro ──
-  { title: 'Financeiro', href: '/financeiro', icon: DollarSign, roles: ['operador', 'supervisor', 'super_admin'] },
-  { title: 'Bancário', href: '/banking', icon: Landmark, roles: ['operador', 'supervisor', 'super_admin'] },
-
-  // ── Documentos ──
-  { title: 'Documentos', href: '/client', icon: FileText, roles: ['cliente', 'operador', 'supervisor', 'super_admin'] },
-  { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' },
-
-  // ── Alertas ──
-  { title: 'Notificações', href: '/notificacoes', icon: Bell, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' as const },
-
-  // ── Análise ──
-  { title: 'Relatórios', href: '/relatorios', icon: FileBarChart, roles: ['operador', 'supervisor', 'super_admin'] },
-
-  // ── Sistema ──
-  { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'] },
-  { title: 'Importação', href: '/import', icon: FileUp, roles: ['supervisor', 'super_admin'] },
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: '',
+    items: [
+      { title: 'Painel Geral', href: '/dashboard', icon: BarChart3, roles: ['operador', 'supervisor', 'super_admin'] },
+    ],
+  },
+  {
+    label: 'OBRA',
+    items: [
+      { title: 'Planejamento', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
+      { title: 'Fornecedores', href: '/fornecedores', icon: Truck, roles: ['supervisor', 'super_admin'] },
+    ],
+  },
+  {
+    label: 'FINANCEIRO',
+    items: [
+      { title: 'Financeiro', href: '/financeiro', icon: DollarSign, roles: ['operador', 'supervisor', 'super_admin'] },
+      { title: 'Bancário', href: '/banking', icon: Landmark, roles: ['operador', 'supervisor', 'super_admin'] },
+      { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
+    ],
+  },
+  {
+    label: 'DOCUMENTOS',
+    items: [
+      { title: 'Documentos', href: '/client', icon: FileText, roles: ['cliente', 'operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' },
+    ],
+  },
+  {
+    label: 'ANÁLISE',
+    items: [
+      { title: 'Relatórios', href: '/relatorios', icon: FileBarChart, roles: ['operador', 'supervisor', 'super_admin'] },
+      { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'] },
+    ],
+  },
 ];
 
 interface AppSidebarProps {
@@ -79,10 +90,13 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
   const quinzena = company?.config?.quinzena_atual ?? 'Q1';
   const companyName = company?.nome_fantasia || company?.razao_social || 'Projeto';
 
-  const visibleItems = NAV_ITEMS.filter(item => {
-    if (role === 'super_admin') return true;
-    return role ? item.roles.includes(role) : false;
-  });
+  const visibleGroups = NAV_GROUPS.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      if (role === 'super_admin') return true;
+      return role ? item.roles.includes(role) : false;
+    }),
+  })).filter(group => group.items.length > 0);
 
   const getBadge = (item: NavItem): number => {
     if (item.badgeKey === 'pendingAudit') return badges.pendingAudit;
@@ -93,11 +107,62 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
     if (isMobile && onClose) onClose();
   };
 
+  function renderNavItems(items: NavItem[], showLabels: boolean) {
+    return items.map(item => {
+      const isActive = pathname.startsWith(item.href);
+      const badgeCount = getBadge(item);
+      return (
+        <Link
+          key={item.href}
+          to={item.href}
+          onClick={handleLinkClick}
+          className={cn(
+            'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150',
+            isActive
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+            !showLabels && 'justify-center px-0'
+          )}
+          title={!showLabels ? item.title : undefined}
+        >
+          <item.icon className="h-4 w-4 shrink-0" />
+          {showLabels && (
+            <>
+              <span className="flex-1">{item.title}</span>
+              {badgeCount > 0 && (
+                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-sidebar-primary text-sidebar-primary-foreground">
+                  {badgeCount}
+                </Badge>
+              )}
+            </>
+          )}
+        </Link>
+      );
+    });
+  }
+
+  function renderGroups(showLabels: boolean) {
+    return visibleGroups.map((group, idx) => (
+      <div key={group.label || idx}>
+        {group.label && showLabels && (
+          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
+            {group.label}
+          </p>
+        )}
+        {group.label && !showLabels && idx > 0 && (
+          <Separator className="my-2 bg-sidebar-border" />
+        )}
+        <div className="space-y-0.5">
+          {renderNavItems(group.items, showLabels)}
+        </div>
+      </div>
+    ));
+  }
+
   // Mobile: overlay drawer
   if (isMobile) {
     return (
       <>
-        {/* Backdrop */}
         {open && (
           <div
             className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
@@ -110,7 +175,6 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
             open ? 'translate-x-0' : '-translate-x-full'
           )}
         >
-          {/* Header */}
           <div className="flex items-center justify-between p-4 h-14">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
@@ -128,32 +192,8 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
 
           <Separator className="bg-sidebar-border" />
 
-          <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-            {visibleItems.map(item => {
-              const isActive = pathname.startsWith(item.href);
-              const badgeCount = getBadge(item);
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={handleLinkClick}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-150',
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className="flex-1">{item.title}</span>
-                  {badgeCount > 0 && (
-                    <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-sidebar-primary text-sidebar-primary-foreground">
-                      {badgeCount}
-                    </Badge>
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="flex-1 py-2 px-2 overflow-y-auto">
+            {renderGroups(true)}
           </nav>
 
           <Separator className="bg-sidebar-border" />
@@ -197,37 +237,8 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
 
       <Separator className="bg-sidebar-border" />
 
-      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {visibleItems.map(item => {
-          const isActive = pathname.startsWith(item.href);
-          const badgeCount = getBadge(item);
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                collapsed && 'justify-center px-0'
-              )}
-              title={collapsed ? item.title : undefined}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.title}</span>
-                  {badgeCount > 0 && (
-                    <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px] font-mono bg-sidebar-primary text-sidebar-primary-foreground">
-                      {badgeCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 py-2 px-2 overflow-y-auto">
+        {renderGroups(!collapsed)}
       </nav>
 
       <Separator className="bg-sidebar-border" />
