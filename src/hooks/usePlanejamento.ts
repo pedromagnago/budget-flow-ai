@@ -2,67 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
 import { STALE_TIMES } from '@/lib/constants';
+import type { ServicoSituacao, MedicaoFinanceiro, ImpactoFisicoFinanceiro, TriggerResult } from '@/types';
 
-// ── Types ──
-
-export interface ServicoSituacao {
-  id: string;
-  nome: string;
-  codigo: string | null;
-  grupo_id: string | null;
-  unidade: string | null;
-  quantidade: number | null;
-  preco_unitario: number | null;
-  valor_total: number;
-  responsavel: string | null;
-  data_inicio_plan: string | null;
-  data_fim_plan: string | null;
-  data_inicio_real: string | null;
-  data_fim_real: string | null;
-  status: string;
-  ordem: number;
-  situacao_calculada: string;
-  dias_atraso: number;
-}
-
-export interface MedicaoFinanceiro {
-  id: string;
-  numero: number;
-  data_inicio: string;
-  data_fim: string;
-  valor_planejado: number;
-  valor_liberado: number;
-  status: string;
-  data_real_liberacao: string | null;
-  lancamento_receita_id: string | null;
-  previsao_liberacao: string | null;
-  status_financeiro: string;
-}
-
-export interface ImpactoFisicoFinanceiro {
-  id: string;
-  company_id: string;
-  tipo: string;
-  servico_id: string | null;
-  medicao_id: string | null;
-  descricao: string | null;
-  desvio_dias: number | null;
-  desvio_percentual: number | null;
-  impacto_financeiro: number | null;
-  acao_tomada: string;
-  resolvido: boolean;
-  created_at: string;
-}
-
-export interface TriggerResult {
-  type: 'delay_detected' | 'early_completion' | 'partial_measurement' | 'none';
-  servicoNome?: string;
-  desvioPercent?: number;
-  diasDesvio?: number;
-  lancamentosAfetados?: number;
-  diasAdiantamento?: number;
-  diferenca?: number;
-}
+// Re-export para compatibilidade
+export type { ServicoSituacao, MedicaoFinanceiro, ImpactoFisicoFinanceiro, TriggerResult } from '@/types';
 
 // ── Queries ──
 

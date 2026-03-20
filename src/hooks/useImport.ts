@@ -11,6 +11,7 @@ export type ImportTarget =
   | 'medicoes'
   | 'medicoes_metas'
   | 'lancamentos'
+  | 'fornecedores'
   | 'categoria_depara';
 
 export interface ParsedRow {
@@ -69,6 +70,11 @@ export const COLUMN_PRESETS: Record<ImportTarget, { required: string[]; optional
       'observacao', 'forma_pagamento', 'numero_parcela', 'total_parcelas',
     ],
     description: 'Lançamentos financeiros — contas a pagar e a receber',
+  },
+  fornecedores: {
+    required: ['razao_social'],
+    optional: ['nome_fantasia', 'cnpj', 'email', 'telefone', 'categoria', 'observacoes'],
+    description: 'Cadastro de fornecedores (materiais, mão de obra, serviços)',
   },
   categoria_depara: {
     required: ['apropriacao', 'departamento'],

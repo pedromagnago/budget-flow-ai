@@ -2,37 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
 import { useAuth } from '@/hooks/useAuth';
+import type { LancamentoStatus } from '@/types';
 
-export interface LancamentoStatus {
-  id: string;
-  company_id: string;
-  tipo: string;
-  valor: number;
-  valor_pago: number;
-  fornecedor_razao: string | null;
-  fornecedor_cnpj: string | null;
-  departamento: string | null;
-  departamento_limpo: string | null;
-  categoria: string | null;
-  observacao: string | null;
-  parcela: string | null;
-  numero_parcela: number | null;
-  total_parcelas: number | null;
-  data_vencimento: string | null;
-  data_emissao: string | null;
-  data_pagamento: string | null;
-  forma_pagamento: string | null;
-  e_previsao: boolean | null;
-  conciliado: boolean | null;
-  situacao: string | null;
-  quinzena: string | null;
-  orcamento_item_id: string | null;
-  conta_bancaria_id: string | null;
-  movimentacao_id: string | null;
-  status_calculado: string | null;
-  dias_ate_vencimento: number | null;
-  created_at: string | null;
-}
+// Re-export para compatibilidade
+export type { LancamentoStatus } from '@/types';
 
 export function useLancamentosStatus(tipo: 'despesa' | 'receita', previsaoOnly = false) {
   const { companyId } = useCompany();
@@ -54,6 +27,10 @@ export function useLancamentosStatus(tipo: 'despesa' | 'receita', previsaoOnly =
         tipo: r.tipo!,
         valor: Number(r.valor ?? 0),
         valor_pago: Number(r.valor_pago ?? 0),
+        status_aprovacao: (r as any).status_aprovacao ?? null,
+        aprovado_por: (r as any).aprovado_por ?? null,
+        aprovado_em: (r as any).aprovado_em ?? null,
+        motivo_rejeicao: (r as any).motivo_rejeicao ?? null,
       })) as LancamentoStatus[];
     },
     enabled: !!companyId,
@@ -69,6 +46,7 @@ export function useCreateLancamento() {
       tipo: string;
       valor: number;
       fornecedor_razao?: string;
+      fornecedor_id?: string;
       departamento?: string;
       categoria?: string;
       data_vencimento?: string;
@@ -85,6 +63,7 @@ export function useCreateLancamento() {
       const { error } = await supabase.from('lancamentos').insert({
         company_id: companyId!,
         created_by: user?.id,
+        status_aprovacao: input.e_previsao ? 'pendente' : 'pendente',
         ...input,
       });
       if (error) throw error;

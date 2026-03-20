@@ -7,10 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import { OrcadoRealizadoFisicoTab } from '@/components/relatorios/OrcadoRealizadoFisicoTab';
+import { DesempenhoEvmTab } from '@/components/relatorios/DesempenhoEvmTab';
 import * as XLSX from 'xlsx';
 
 export default function RelatoriosPage() {
-  const [tab, setTab] = useState('fluxo');
+  const [tab, setTab] = useState('orcado-fisico');
   const { companyId } = useCompany();
 
   // Fluxo de Caixa
@@ -98,10 +100,20 @@ export default function RelatoriosPage() {
       <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
+          <TabsTrigger value="orcado-fisico">Orçado × Realizado × Físico</TabsTrigger>
+          <TabsTrigger value="evm">Desempenho (EVM)</TabsTrigger>
           <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
           <TabsTrigger value="contas">Contas a Pagar/Receber</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="orcado-fisico">
+          <OrcadoRealizadoFisicoTab />
+        </TabsContent>
+
+        <TabsContent value="evm">
+          <DesempenhoEvmTab />
+        </TabsContent>
 
         <TabsContent value="fluxo">
           <div className="bg-card border rounded-xl p-5 shadow-card">

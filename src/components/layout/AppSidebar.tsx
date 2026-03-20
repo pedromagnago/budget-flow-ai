@@ -17,6 +17,8 @@ import {
   FileUp,
   FileText,
   FileBarChart,
+  Truck,
+  Bell,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,14 +35,29 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: BarChart3, roles: ['operador', 'supervisor', 'super_admin'] },
-  { title: 'Documentos', href: '/client', icon: FileText, roles: ['cliente', 'operador', 'supervisor', 'super_admin'] },
-  { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' },
-  { title: 'Obra', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
+  // ── Painel Geral ──
+  { title: 'Painel Geral', href: '/dashboard', icon: BarChart3, roles: ['operador', 'supervisor', 'super_admin'] },
+
+  // ── Planejamento ──
+  { title: 'Planejamento', href: '/planejamento', icon: HardHat, roles: ['supervisor', 'super_admin'] },
+  { title: 'Fornecedores', href: '/fornecedores', icon: Truck, roles: ['supervisor', 'super_admin'] },
+  { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
+
+  // ── Financeiro ──
   { title: 'Financeiro', href: '/financeiro', icon: DollarSign, roles: ['operador', 'supervisor', 'super_admin'] },
   { title: 'Bancário', href: '/banking', icon: Landmark, roles: ['operador', 'supervisor', 'super_admin'] },
-  { title: 'Simulador', href: '/simulator', icon: SlidersHorizontal, roles: ['supervisor', 'super_admin'] },
+
+  // ── Documentos ──
+  { title: 'Documentos', href: '/client', icon: FileText, roles: ['cliente', 'operador', 'supervisor', 'super_admin'] },
+  { title: 'Auditoria', href: '/audit', icon: CheckSquare, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' },
+
+  // ── Alertas ──
+  { title: 'Notificações', href: '/notificacoes', icon: Bell, roles: ['operador', 'supervisor', 'super_admin'], badgeKey: 'pendingAudit' as const },
+
+  // ── Análise ──
   { title: 'Relatórios', href: '/relatorios', icon: FileBarChart, roles: ['operador', 'supervisor', 'super_admin'] },
+
+  // ── Sistema ──
   { title: 'Configurações', href: '/settings', icon: Settings, roles: ['supervisor', 'super_admin'] },
   { title: 'Importação', href: '/import', icon: FileUp, roles: ['supervisor', 'super_admin'] },
 ];

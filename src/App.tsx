@@ -19,6 +19,8 @@ import ImportPage from "@/pages/import/ImportPage";
 import FinanceiroPage from "@/pages/financeiro/FinanceiroPage";
 import NotificacoesPage from "@/pages/notificacoes/NotificacoesPage";
 import RelatoriosPage from "@/pages/relatorios/RelatoriosPage";
+import FornecedoresPage from "@/pages/fornecedores/FornecedoresPage";
+import NovoProjetoPage from "@/pages/projeto/NovoProjetoPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,12 +41,13 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/projeto/novo" element={<NovoProjetoPage />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/audit" element={<AuditQueue />} />
               <Route path="/client" element={<ClientPortal />} />
               <Route path="/planejamento" element={<PlanejamentoPage />} />
-              <Route path="/schedule" element={<Navigate to="/planejamento" replace />} />
+              <Route path="/fornecedores" element={<FornecedoresPage />} />
               <Route path="/financeiro" element={<FinanceiroPage />} />
               <Route path="/notificacoes" element={<NotificacoesPage />} />
               <Route path="/banking" element={<BankingPage />} />

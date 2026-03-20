@@ -1,16 +1,11 @@
-export type UserRole = 'super_admin' | 'supervisor' | 'operador' | 'cliente';
+/**
+ * Constantes da aplicação.
+ * Os tipos de negócio estão em @/types — aqui ficam apenas labels, maps e configs.
+ */
+import type { UserRole } from '@/types';
 
-export type DocumentStatus =
-  | 'recebido'
-  | 'processando'
-  | 'classificado'
-  | 'aprovado'
-  | 'corrigido'
-  | 'rejeitado'
-  | 'executado'
-  | 'erro';
-
-export type MedicaoStatus = 'no_prazo' | 'em_risco' | 'atrasada' | 'futura';
+// Re-export para manter compatibilidade com imports existentes
+export type { UserRole, DocumentStatus, MedicaoStatus } from '@/types';
 
 export const STATUS_LABELS: Record<string, string> = {
   recebido: 'Recebido',
@@ -26,6 +21,13 @@ export const STATUS_LABELS: Record<string, string> = {
   em_risco: 'Em Risco',
   atrasada: 'Atrasada',
   futura: 'Futura',
+  liberada: 'Liberada',
+  // Serviços
+  nao_iniciado: 'Não Iniciado',
+  em_andamento: 'Em Andamento',
+  concluido: 'Concluído',
+  atrasado: 'Atrasado',
+  pausado: 'Pausado',
 };
 
 export const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -42,9 +44,14 @@ export const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructi
   em_risco: 'outline',
   atrasada: 'destructive',
   futura: 'secondary',
+  liberada: 'default',
+  nao_iniciado: 'secondary',
+  em_andamento: 'default',
+  concluido: 'default',
+  atrasado: 'destructive',
+  pausado: 'outline',
 };
 
-// Status color classes — background + text
 export const STATUS_COLORS: Record<string, string> = {
   recebido: 'bg-muted text-muted-foreground',
   processando: 'bg-primary/10 text-primary',
@@ -59,6 +66,12 @@ export const STATUS_COLORS: Record<string, string> = {
   em_risco: 'bg-module-dashboard/10 text-module-dashboard',
   atrasada: 'bg-destructive/10 text-destructive',
   futura: 'bg-muted text-muted-foreground',
+  liberada: 'bg-consumido/10 text-consumido',
+  nao_iniciado: 'bg-muted text-muted-foreground',
+  em_andamento: 'bg-primary/10 text-primary',
+  concluido: 'bg-consumido/10 text-consumido',
+  atrasado: 'bg-destructive/10 text-destructive',
+  pausado: 'bg-muted text-muted-foreground',
 };
 
 export const STALE_TIMES = {
@@ -71,7 +84,7 @@ export const STALE_TIMES = {
 export const ROLE_REDIRECT: Record<UserRole, string> = {
   super_admin: '/dashboard',
   supervisor: '/dashboard',
-  operador: '/audit',
+  operador: '/dashboard',
   cliente: '/client',
 };
 
@@ -80,4 +93,13 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   supervisor: 'Supervisor',
   operador: 'Operador',
   cliente: 'Cliente',
+};
+
+/** Categorias de fornecedor para selects */
+export const CATEGORIA_FORNECEDOR_LABELS: Record<string, string> = {
+  material: 'Material',
+  mao_de_obra: 'Mão de Obra',
+  servico: 'Serviço',
+  locacao: 'Locação',
+  outro: 'Outro',
 };
