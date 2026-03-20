@@ -79,8 +79,8 @@ export function UsersTab({ userRoles, loadingRoles, updateUserRole, inviteUser }
       if (error) throw error;
       toast.success(`Papel atribuído com sucesso`);
       setSelectedUnassigned(null);
-      // Trigger refetch via query invalidation
-      window.dispatchEvent(new Event('user-role-assigned'));
+      qc.invalidateQueries({ queryKey: ['user-roles'] });
+      qc.invalidateQueries({ queryKey: ['auth-users'] });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Erro ao atribuir papel');
     }
