@@ -29,11 +29,9 @@ Deno.serve(async (req) => {
     const anonClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claimsData, error: claimsErr } = await anonClient.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsErr || !claimsData?.claims) return json({ error: "Unauthorized" }, 401);
-    const userId = claimsData.claims.sub as string;
+    const { data: { user }, error: userErr } = await anonClient.auth.getUser();
+    if (userErr || !user) return json({ error: "Unauthorized" }, 401);
+    const userId = user.id;
 
     const admin = createClient(supabaseUrl, serviceKey);
 
@@ -208,7 +206,7 @@ Use SEMPRE a tool classify_document para retornar o resultado.`;
         valorOrcadoItem = matchedItem.valor_orcado;
         valorJaConsumido = matchedItem.valor_consumido ?? 0;
         valorSaldoAntes = matchedItem.valor_saldo ?? (matchedItem.valor_orcado - (matchedItem.valor_consumido ?? 0));
-        valorSaldoDepois = valorSaldoAntes - (classification.valor ?? 0);
+        valorSaldoDepois = (valorSaldoAntes ?? 0) - (classification.valor ?? 0);
       } else {
         orcamentoItemId = null; // invalid id from AI
       }
