@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil, Search, Truck } from 'lucide-react';
+import { UsersTab } from '@/components/settings/UsersTab';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
