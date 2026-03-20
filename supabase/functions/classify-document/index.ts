@@ -206,7 +206,7 @@ Use SEMPRE a tool classify_document para retornar o resultado.`;
         valorOrcadoItem = matchedItem.valor_orcado;
         valorJaConsumido = matchedItem.valor_consumido ?? 0;
         valorSaldoAntes = matchedItem.valor_saldo ?? (matchedItem.valor_orcado - (matchedItem.valor_consumido ?? 0));
-        valorSaldoDepois = valorSaldoAntes - (classification.valor ?? 0);
+        valorSaldoDepois = (valorSaldoAntes ?? 0) - (classification.valor ?? 0);
       } else {
         orcamentoItemId = null; // invalid id from AI
       }
