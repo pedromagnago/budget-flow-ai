@@ -563,6 +563,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "classificacoes_ia_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "classificacoes_ia_orcamento_item_id_fkey"
             columns: ["orcamento_item_id"]
             isOneToOne: false
@@ -678,10 +685,13 @@ export type Database = {
           data_inicio_real: string | null
           depende_de: string | null
           descricao: string | null
+          forma_pagamento_id: string | null
+          fornecedor_id: string | null
           grupo_id: string | null
           id: string
           nome: string
           observacao: string | null
+          orcamento_item_id: string | null
           ordem: number | null
           preco_unitario: number | null
           quantidade: number | null
@@ -701,10 +711,13 @@ export type Database = {
           data_inicio_real?: string | null
           depende_de?: string | null
           descricao?: string | null
+          forma_pagamento_id?: string | null
+          fornecedor_id?: string | null
           grupo_id?: string | null
           id?: string
           nome: string
           observacao?: string | null
+          orcamento_item_id?: string | null
           ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
@@ -724,10 +737,13 @@ export type Database = {
           data_inicio_real?: string | null
           depende_de?: string | null
           descricao?: string | null
+          forma_pagamento_id?: string | null
+          fornecedor_id?: string | null
           grupo_id?: string | null
           id?: string
           nome?: string
           observacao?: string | null
+          orcamento_item_id?: string | null
           ordem?: number | null
           preco_unitario?: number | null
           quantidade?: number | null
@@ -759,6 +775,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cronograma_servicos_forma_pagamento_id_fkey"
+            columns: ["forma_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "formas_pagamento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
+          },
+          {
             foreignKeyName: "cronograma_servicos_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
@@ -771,6 +808,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_orcado_vs_realizado"
             referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_etapa_completa"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -817,6 +868,100 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "documentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formas_pagamento: {
+        Row: {
+          ativo: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          nome: string
+          parcelas_padrao: number | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          parcelas_padrao?: number | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          parcelas_padrao?: number | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formas_pagamento_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          cnpj: string | null
+          company_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          nome_fantasia: string | null
+          observacoes: string | null
+          razao_social: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          cnpj?: string | null
+          company_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          cnpj?: string | null
+          company_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -905,6 +1050,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "impactos_fisico_financeiro_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "impactos_fisico_financeiro_medicao_id_fkey"
             columns: ["medicao_id"]
             isOneToOne: false
@@ -936,6 +1088,8 @@ export type Database = {
       }
       lancamentos: {
         Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
           categoria: string | null
           company_id: string
           conciliado: boolean | null
@@ -951,8 +1105,10 @@ export type Database = {
           e_previsao: boolean | null
           forma_pagamento: string | null
           fornecedor_cnpj: string | null
+          fornecedor_id: string | null
           fornecedor_razao: string | null
           id: string
+          motivo_rejeicao: string | null
           movimentacao_id: string | null
           notificacao_enviada: boolean | null
           notificado_em: string | null
@@ -962,6 +1118,7 @@ export type Database = {
           parcela: string | null
           quinzena: string | null
           situacao: string | null
+          status_aprovacao: string | null
           tipo: string
           total_parcelas: number | null
           updated_at: string | null
@@ -970,6 +1127,8 @@ export type Database = {
           valor_pago: number | null
         }
         Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           categoria?: string | null
           company_id: string
           conciliado?: boolean | null
@@ -985,8 +1144,10 @@ export type Database = {
           e_previsao?: boolean | null
           forma_pagamento?: string | null
           fornecedor_cnpj?: string | null
+          fornecedor_id?: string | null
           fornecedor_razao?: string | null
           id?: string
+          motivo_rejeicao?: string | null
           movimentacao_id?: string | null
           notificacao_enviada?: boolean | null
           notificado_em?: string | null
@@ -996,6 +1157,7 @@ export type Database = {
           parcela?: string | null
           quinzena?: string | null
           situacao?: string | null
+          status_aprovacao?: string | null
           tipo: string
           total_parcelas?: number | null
           updated_at?: string | null
@@ -1004,6 +1166,8 @@ export type Database = {
           valor_pago?: number | null
         }
         Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           categoria?: string | null
           company_id?: string
           conciliado?: boolean | null
@@ -1019,8 +1183,10 @@ export type Database = {
           e_previsao?: boolean | null
           forma_pagamento?: string | null
           fornecedor_cnpj?: string | null
+          fornecedor_id?: string | null
           fornecedor_razao?: string | null
           id?: string
+          motivo_rejeicao?: string | null
           movimentacao_id?: string | null
           notificacao_enviada?: boolean | null
           notificado_em?: string | null
@@ -1030,6 +1196,7 @@ export type Database = {
           parcela?: string | null
           quinzena?: string | null
           situacao?: string | null
+          status_aprovacao?: string | null
           tipo?: string
           total_parcelas?: number | null
           updated_at?: string | null
@@ -1058,6 +1225,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_saldo_contas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
           },
           {
             foreignKeyName: "lancamentos_orcamento_item_id_fkey"
@@ -1146,6 +1327,13 @@ export type Database = {
             columns: ["lancamento_receita_id"]
             isOneToOne: false
             referencedRelation: "vw_lancamentos_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
             referencedColumns: ["id"]
           },
         ]
@@ -1237,6 +1425,7 @@ export type Database = {
           descricao: string
           documento: string | null
           fornecedor: string | null
+          fornecedor_id: string | null
           grupo_id: string | null
           id: string
           item_id: string | null
@@ -1259,6 +1448,7 @@ export type Database = {
           descricao: string
           documento?: string | null
           fornecedor?: string | null
+          fornecedor_id?: string | null
           grupo_id?: string | null
           id?: string
           item_id?: string | null
@@ -1281,6 +1471,7 @@ export type Database = {
           descricao?: string
           documento?: string | null
           fornecedor?: string | null
+          fornecedor_id?: string | null
           grupo_id?: string | null
           id?: string
           item_id?: string | null
@@ -1313,6 +1504,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimentacoes_bancarias_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
+          },
+          {
             foreignKeyName: "movimentacoes_bancarias_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
@@ -1324,6 +1529,13 @@ export type Database = {
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_etapa_completa"
             referencedColumns: ["grupo_id"]
           },
           {
@@ -1345,6 +1557,13 @@ export type Database = {
             columns: ["lancamento_id"]
             isOneToOne: false
             referencedRelation: "vw_lancamentos_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimentacoes_bancarias_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
             referencedColumns: ["id"]
           },
         ]
@@ -1408,6 +1627,13 @@ export type Database = {
             referencedRelation: "vw_lancamentos_status"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notificacoes_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orcamento_grupos: {
@@ -1455,6 +1681,7 @@ export type Database = {
           custo_unitario: number | null
           forma_pagamento: string | null
           fornecedor: string | null
+          fornecedor_id: string | null
           grupo_id: string
           id: string
           item: string
@@ -1480,6 +1707,7 @@ export type Database = {
           custo_unitario?: number | null
           forma_pagamento?: string | null
           fornecedor?: string | null
+          fornecedor_id?: string | null
           grupo_id: string
           id?: string
           item: string
@@ -1505,6 +1733,7 @@ export type Database = {
           custo_unitario?: number | null
           forma_pagamento?: string | null
           fornecedor?: string | null
+          fornecedor_id?: string | null
           grupo_id?: string
           id?: string
           item?: string
@@ -1530,6 +1759,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orcamento_items_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
+          },
+          {
             foreignKeyName: "orcamento_items_grupo_id_fkey"
             columns: ["grupo_id"]
             isOneToOne: false
@@ -1541,6 +1784,13 @@ export type Database = {
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_etapa_completa"
             referencedColumns: ["grupo_id"]
           },
         ]
@@ -1604,112 +1854,167 @@ export type Database = {
           },
         ]
       }
+      vw_etapa_completa: {
+        Row: {
+          company_id: string | null
+          etapa_nome: string | null
+          etapa_valor_orcado: number | null
+          grupo_id: string | null
+          lancamentos_pendentes: number | null
+          lancamentos_vencidos: number | null
+          pct_consumido: number | null
+          pct_fisico_concluido: number | null
+          servicos_atrasados: number | null
+          servicos_concluidos: number | null
+          soma_consumido_itens: number | null
+          soma_orcado_itens: number | null
+          soma_saldo_itens: number | null
+          total_fornecedores: number | null
+          total_itens: number | null
+          total_lancamentos: number | null
+          total_servicos: number | null
+          valor_pago_lancamentos: number | null
+          valor_total_lancamentos: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_grupos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_fornecedor_resumo: {
+        Row: {
+          categoria: string | null
+          cnpj: string | null
+          company_id: string | null
+          fornecedor_id: string | null
+          lancamentos_pendentes: number | null
+          lancamentos_vencidos: number | null
+          nome_fantasia: string | null
+          razao_social: string | null
+          total_itens_orcamento: number | null
+          total_lancamentos: number | null
+          valor_total_lancamentos: number | null
+          valor_total_orcado: number | null
+          valor_total_pago: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_lancamentos_status: {
         Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
           categoria: string | null
           company_id: string | null
           conciliado: boolean | null
           conta_bancaria_id: string | null
           created_at: string | null
-          created_by: string | null
           data_emissao: string | null
           data_pagamento: string | null
           data_vencimento: string | null
-          deleted_at: string | null
           departamento: string | null
           departamento_limpo: string | null
           dias_ate_vencimento: number | null
           e_previsao: boolean | null
           forma_pagamento: string | null
           fornecedor_cnpj: string | null
+          fornecedor_id: string | null
           fornecedor_razao: string | null
           id: string | null
+          motivo_rejeicao: string | null
           movimentacao_id: string | null
-          notificacao_enviada: boolean | null
-          notificado_em: string | null
           numero_parcela: number | null
           observacao: string | null
           orcamento_item_id: string | null
           parcela: string | null
           quinzena: string | null
           situacao: string | null
+          status_aprovacao: string | null
           status_calculado: string | null
           tipo: string | null
           total_parcelas: number | null
-          updated_at: string | null
-          updated_by: string | null
           valor: number | null
           valor_pago: number | null
         }
         Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           categoria?: string | null
           company_id?: string | null
           conciliado?: boolean | null
           conta_bancaria_id?: string | null
           created_at?: string | null
-          created_by?: string | null
           data_emissao?: string | null
           data_pagamento?: string | null
           data_vencimento?: string | null
-          deleted_at?: string | null
           departamento?: string | null
-          departamento_limpo?: string | null
+          departamento_limpo?: never
           dias_ate_vencimento?: never
           e_previsao?: boolean | null
           forma_pagamento?: string | null
           fornecedor_cnpj?: string | null
+          fornecedor_id?: string | null
           fornecedor_razao?: string | null
           id?: string | null
+          motivo_rejeicao?: string | null
           movimentacao_id?: string | null
-          notificacao_enviada?: boolean | null
-          notificado_em?: string | null
           numero_parcela?: number | null
           observacao?: string | null
           orcamento_item_id?: string | null
           parcela?: string | null
           quinzena?: string | null
           situacao?: string | null
+          status_aprovacao?: string | null
           status_calculado?: never
           tipo?: string | null
           total_parcelas?: number | null
-          updated_at?: string | null
-          updated_by?: string | null
           valor?: number | null
           valor_pago?: number | null
         }
         Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           categoria?: string | null
           company_id?: string | null
           conciliado?: boolean | null
           conta_bancaria_id?: string | null
           created_at?: string | null
-          created_by?: string | null
           data_emissao?: string | null
           data_pagamento?: string | null
           data_vencimento?: string | null
-          deleted_at?: string | null
           departamento?: string | null
-          departamento_limpo?: string | null
+          departamento_limpo?: never
           dias_ate_vencimento?: never
           e_previsao?: boolean | null
           forma_pagamento?: string | null
           fornecedor_cnpj?: string | null
+          fornecedor_id?: string | null
           fornecedor_razao?: string | null
           id?: string | null
+          motivo_rejeicao?: string | null
           movimentacao_id?: string | null
-          notificacao_enviada?: boolean | null
-          notificado_em?: string | null
           numero_parcela?: number | null
           observacao?: string | null
           orcamento_item_id?: string | null
           parcela?: string | null
           quinzena?: string | null
           situacao?: string | null
+          status_aprovacao?: string | null
           status_calculado?: never
           tipo?: string | null
           total_parcelas?: number | null
-          updated_at?: string | null
-          updated_by?: string | null
           valor?: number | null
           valor_pago?: number | null
         }
@@ -1734,6 +2039,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_saldo_contas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
           },
           {
             foreignKeyName: "lancamentos_orcamento_item_id_fkey"
@@ -1819,6 +2138,94 @@ export type Database = {
             columns: ["lancamento_receita_id"]
             isOneToOne: false
             referencedRelation: "vw_lancamentos_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medicoes_lancamento_receita_id_fkey"
+            columns: ["lancamento_receita_id"]
+            isOneToOne: false
+            referencedRelation: "vw_pipeline_financeiro"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_pipeline_financeiro: {
+        Row: {
+          aprovado_por: string | null
+          categoria: string | null
+          company_id: string | null
+          conciliado: boolean | null
+          created_at: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          departamento: string | null
+          departamento_limpo: string | null
+          dias_ate_vencimento: number | null
+          e_previsao: boolean | null
+          etapa_nome: string | null
+          fase: string | null
+          forma_pagamento: string | null
+          fornecedor_id: string | null
+          fornecedor_razao: string | null
+          id: string | null
+          numero_parcela: number | null
+          observacao: string | null
+          orcamento_item_id: string | null
+          orcamento_item_nome: string | null
+          orcamento_valor_consumido: number | null
+          orcamento_valor_orcado: number | null
+          status_aprovacao: string | null
+          tipo: string | null
+          total_parcelas: number | null
+          valor: number | null
+          valor_pago: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
+          },
+          {
+            foreignKeyName: "lancamentos_orcamento_item_id_fkey"
+            columns: ["orcamento_item_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_pipeline_resumo: {
+        Row: {
+          company_id: string | null
+          fase: string | null
+          tipo: string | null
+          total_lancamentos: number | null
+          valor_pago_total: number | null
+          valor_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1931,6 +2338,13 @@ export type Database = {
             columns: ["grupo_id"]
             isOneToOne: false
             referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_etapa_completa"
             referencedColumns: ["grupo_id"]
           },
         ]
