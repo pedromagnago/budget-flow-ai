@@ -150,7 +150,6 @@ export interface LancamentoStatus {
   valor_pago: number;
   fornecedor_razao: string | null;
   fornecedor_cnpj: string | null;
-  fornecedor_id: string | null;
   departamento: string | null;
   departamento_limpo: string | null;
   categoria: string | null;
