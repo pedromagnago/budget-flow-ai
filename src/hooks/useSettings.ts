@@ -97,19 +97,28 @@ export function useCreateCategoria() {
 }
 
 // ── User roles ──
+export interface UserRoleWithEmail {
+  id: string;
+  user_id: string;
+  email: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+}
+
 export function useUserRoles() {
   const { companyId } = useCompany();
   return useQuery({
     queryKey: ['user-roles', companyId],
     enabled: !!companyId,
     staleTime: STALE_TIMES.configs,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('company_id', companyId!);
+    queryFn: async (): Promise<UserRoleWithEmail[]> => {
+      const { data, error } = await supabase.rpc(
+        'get_user_roles_with_email' as never,
+        { _company_id: companyId } as never
+      ) as unknown as { data: UserRoleWithEmail[] | null; error: Error | null };
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }

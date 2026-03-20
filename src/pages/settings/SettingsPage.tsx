@@ -467,7 +467,7 @@ export default function SettingsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-muted/30">
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">User ID</th>
+                    <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Email</th>
                     <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Papel</th>
                     <th className="text-center py-2 px-3 font-medium text-muted-foreground text-xs">Ativo</th>
                     <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Criado em</th>
@@ -477,7 +477,7 @@ export default function SettingsPage() {
                 <tbody>
                   {(userRoles ?? []).map(r => (
                     <tr key={r.id} className="border-t">
-                      <td className="py-1.5 px-3 font-mono text-[10px] truncate max-w-[200px]">{r.user_id}</td>
+                      <td className="py-1.5 px-3 text-xs">{r.email ?? r.user_id}</td>
                       <td className="py-1.5 px-3">
                         <Select
                           defaultValue={r.role}
