@@ -231,6 +231,13 @@ export type Database = {
             foreignKeyName: "avanco_fisico_servico_id_fkey"
             columns: ["servico_id"]
             isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
+          },
+          {
+            foreignKeyName: "avanco_fisico_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
             referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
@@ -293,6 +300,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cronograma_servicos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avancos_obra_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
           },
           {
             foreignKeyName: "avancos_obra_servico_id_fkey"
@@ -771,6 +785,13 @@ export type Database = {
             foreignKeyName: "cronograma_servicos_depende_de_fkey"
             columns: ["depende_de"]
             isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_depende_de_fkey"
+            columns: ["depende_de"]
+            isOneToOne: false
             referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
@@ -1076,6 +1097,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cronograma_servicos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impactos_fisico_financeiro_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
           },
           {
             foreignKeyName: "impactos_fisico_financeiro_servico_id_fkey"
@@ -1406,6 +1434,13 @@ export type Database = {
             foreignKeyName: "medicoes_metas_servico_id_fkey"
             columns: ["servico_id"]
             isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
+          },
+          {
+            foreignKeyName: "medicoes_metas_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
             referencedRelation: "vw_servicos_situacao"
             referencedColumns: ["id"]
           },
@@ -1679,7 +1714,9 @@ export type Database = {
           created_at: string | null
           custo_casa: number | null
           custo_unitario: number | null
+          dias_prazo_pagamento: number | null
           forma_pagamento: string | null
+          forma_pagamento_id: string | null
           fornecedor: string | null
           fornecedor_id: string | null
           grupo_id: string
@@ -1691,6 +1728,7 @@ export type Database = {
           quantidade_total: number | null
           quantidade_unit: number | null
           quinzenas: Json | null
+          servico_id: string | null
           tipo: string | null
           unidade: string | null
           updated_at: string | null
@@ -1705,7 +1743,9 @@ export type Database = {
           created_at?: string | null
           custo_casa?: number | null
           custo_unitario?: number | null
+          dias_prazo_pagamento?: number | null
           forma_pagamento?: string | null
+          forma_pagamento_id?: string | null
           fornecedor?: string | null
           fornecedor_id?: string | null
           grupo_id: string
@@ -1717,6 +1757,7 @@ export type Database = {
           quantidade_total?: number | null
           quantidade_unit?: number | null
           quinzenas?: Json | null
+          servico_id?: string | null
           tipo?: string | null
           unidade?: string | null
           updated_at?: string | null
@@ -1731,7 +1772,9 @@ export type Database = {
           created_at?: string | null
           custo_casa?: number | null
           custo_unitario?: number | null
+          dias_prazo_pagamento?: number | null
           forma_pagamento?: string | null
+          forma_pagamento_id?: string | null
           fornecedor?: string | null
           fornecedor_id?: string | null
           grupo_id?: string
@@ -1743,6 +1786,7 @@ export type Database = {
           quantidade_total?: number | null
           quantidade_unit?: number | null
           quinzenas?: Json | null
+          servico_id?: string | null
           tipo?: string | null
           unidade?: string | null
           updated_at?: string | null
@@ -1756,6 +1800,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_forma_pagamento_id_fkey"
+            columns: ["forma_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "formas_pagamento"
             referencedColumns: ["id"]
           },
           {
@@ -1792,6 +1843,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_etapa_completa"
             referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_servicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servico_com_itens"
+            referencedColumns: ["servico_id"]
+          },
+          {
+            foreignKeyName: "orcamento_items_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "vw_servicos_situacao"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2254,6 +2326,84 @@ export type Database = {
           },
         ]
       }
+      vw_servico_com_itens: {
+        Row: {
+          ativo: boolean | null
+          codigo: string | null
+          company_id: string | null
+          data_fim_plan: string | null
+          data_fim_real: string | null
+          data_inicio_plan: string | null
+          data_inicio_real: string | null
+          grupo_id: string | null
+          ordem: number | null
+          preco_unitario: number | null
+          quantidade: number | null
+          responsavel: string | null
+          servico_forma_pagamento_id: string | null
+          servico_fornecedor_id: string | null
+          servico_id: string | null
+          servico_nome: string | null
+          servico_valor_original: number | null
+          soma_itens_consumido: number | null
+          soma_itens_orcado: number | null
+          soma_itens_saldo: number | null
+          status: string | null
+          total_itens: number | null
+          unidade: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_servicos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_forma_pagamento_id_fkey"
+            columns: ["servico_forma_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "formas_pagamento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_fornecedor_id_fkey"
+            columns: ["servico_fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_fornecedor_id_fkey"
+            columns: ["servico_fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "vw_fornecedor_resumo"
+            referencedColumns: ["fornecedor_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_grupos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "v_orcado_vs_realizado"
+            referencedColumns: ["grupo_id"]
+          },
+          {
+            foreignKeyName: "cronograma_servicos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "vw_etapa_completa"
+            referencedColumns: ["grupo_id"]
+          },
+        ]
+      }
       vw_servicos_situacao: {
         Row: {
           codigo: string | null
@@ -2369,6 +2519,17 @@ export type Database = {
         Returns: {
           company_id: string
           role: string
+        }[]
+      }
+      get_user_roles_with_email: {
+        Args: { _company_id: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          email: string
+          id: string
+          role: string
+          user_id: string
         }[]
       }
       refresh_materialized_views: { Args: never; Returns: undefined }

@@ -161,6 +161,46 @@ export function useUpdateUserRole() {
   });
 }
 
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: { action: 'delete', user_id: userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-roles'] });
+      qc.invalidateQueries({ queryKey: ['auth-users'] });
+      toast.success('Usuário excluído com sucesso');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Erro ao excluir usuário'),
+  });
+}
+
+export function useUpdateAuthUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { user_id: string; email?: string; password?: string }) => {
+      const { data, error } = await supabase.functions.invoke('manage-user', {
+        body: { action: 'update', user_id: input.user_id, updates: { email: input.email, password: input.password } },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-roles'] });
+      qc.invalidateQueries({ queryKey: ['auth-users'] });
+      toast.success('Usuário atualizado com sucesso');
+    },
+    onError: (err: Error) => toast.error(err.message || 'Erro ao atualizar usuário'),
+  });
+}
+
 // ── Alertas ──
 export function useAlertas() {
   const { companyId } = useCompany();

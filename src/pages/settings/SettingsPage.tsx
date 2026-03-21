@@ -13,7 +13,7 @@ import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layer
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
-  useUserRoles, useInviteUser, useUpdateUserRole,
+  useUserRoles, useInviteUser, useUpdateUserRole, useDeleteUser, useUpdateAuthUser,
 } from '@/hooks/useSettings';
 import { useFormasPagamento, useCreateFormaPagamento, useUpdateFormaPagamento, useDeleteFormaPagamento } from '@/hooks/useFormasPagamento';
 import { useFornecedores, useCreateFornecedor, useUpdateFornecedor, useDeactivateFornecedor } from '@/hooks/useFornecedores';
@@ -51,6 +51,10 @@ export default function SettingsPage() {
   const { data: userRoles, isLoading: loadingRoles } = useUserRoles();
   const inviteUser = useInviteUser();
   const updateUserRole = useUpdateUserRole();
+  const deleteUser = useDeleteUser();
+  const updateAuthUser = useUpdateAuthUser();
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ email: '', password: '' });
   const { data: formasPgto, isLoading: loadingFormas } = useFormasPagamento();
   const createForma = useCreateFormaPagamento();
   const updateForma = useUpdateFormaPagamento();
@@ -477,7 +481,18 @@ export default function SettingsPage() {
                 <tbody>
                   {(userRoles ?? []).map(r => (
                     <tr key={r.id} className="border-t">
-                      <td className="py-1.5 px-3 text-xs">{r.email ?? r.user_id}</td>
+                      <td className="py-1.5 px-3 text-xs">
+                        {editingUserId === r.user_id ? (
+                          <Input
+                            className="h-7 text-xs w-40"
+                            value={editUserForm.email}
+                            onChange={e => setEditUserForm(p => ({ ...p, email: e.target.value }))}
+                            placeholder="Novo email"
+                          />
+                        ) : (
+                          r.email ?? r.user_id
+                        )}
+                      </td>
                       <td className="py-1.5 px-3">
                         <Select
                           defaultValue={r.role}
@@ -501,7 +516,43 @@ export default function SettingsPage() {
                       </td>
                       <td className="py-1.5 px-3 text-xs text-muted-foreground">{r.created_at ? formatDate(r.created_at) : '—'}</td>
                       <td className="py-1.5 px-3 text-center">
-                        <span className={`inline-block h-2 w-2 rounded-full ${r.active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                        <div className="flex gap-1 justify-center">
+                          {editingUserId === r.user_id ? (
+                            <>
+                              <div className="space-y-1">
+                                <Input
+                                  type="password"
+                                  className="h-7 text-xs w-28"
+                                  value={editUserForm.password}
+                                  onChange={e => setEditUserForm(p => ({ ...p, password: e.target.value }))}
+                                  placeholder="Nova senha (opcional)"
+                                />
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={async () => {
+                                const updates: { user_id: string; email?: string; password?: string } = { user_id: r.user_id };
+                                if (editUserForm.email && editUserForm.email !== r.email) updates.email = editUserForm.email;
+                                if (editUserForm.password) updates.password = editUserForm.password;
+                                if (updates.email || updates.password) {
+                                  updateAuthUser.mutate(updates);
+                                }
+                                setEditingUserId(null);
+                              }}><span className="text-xs">✓</span></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingUserId(null)}><span className="text-xs">✕</span></Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                                setEditingUserId(r.user_id);
+                                setEditUserForm({ email: r.email ?? '', password: '' });
+                              }}><Pencil className="h-3 w-3" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => {
+                                if (confirm(`Excluir o usuário ${r.email ?? r.user_id}? Esta ação é irreversível.`)) {
+                                  deleteUser.mutate(r.user_id);
+                                }
+                              }}><Trash2 className="h-3 w-3" /></Button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
