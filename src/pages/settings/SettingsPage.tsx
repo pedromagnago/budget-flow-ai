@@ -51,6 +51,10 @@ export default function SettingsPage() {
   const { data: userRoles, isLoading: loadingRoles } = useUserRoles();
   const inviteUser = useInviteUser();
   const updateUserRole = useUpdateUserRole();
+  const deleteUser = useDeleteUser();
+  const updateAuthUser = useUpdateAuthUser();
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ email: '', password: '' });
   const { data: formasPgto, isLoading: loadingFormas } = useFormasPagamento();
   const createForma = useCreateFormaPagamento();
   const updateForma = useUpdateFormaPagamento();
