@@ -13,7 +13,7 @@ import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layer
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
-  useUserRoles, useInviteUser, useUpdateUserRole,
+  useUserRoles, useInviteUser, useUpdateUserRole, useDeleteUser, useUpdateAuthUser,
 } from '@/hooks/useSettings';
 import { useFormasPagamento, useCreateFormaPagamento, useUpdateFormaPagamento, useDeleteFormaPagamento } from '@/hooks/useFormasPagamento';
 import { useFornecedores, useCreateFornecedor, useUpdateFornecedor, useDeactivateFornecedor } from '@/hooks/useFornecedores';
