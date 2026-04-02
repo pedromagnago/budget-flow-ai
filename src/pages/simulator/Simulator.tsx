@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
-import { SlidersHorizontal, Plus, GitCompare, Trash2, Pencil, RotateCcw, TrendingDown, CalendarDays, AlertTriangle } from 'lucide-react';
+import { SlidersHorizontal, Plus, GitCompare, Trash2, RotateCcw, TrendingDown, CalendarDays, AlertTriangle, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatCurrencyCompact, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
   useCenarios, useCreateCenario, useDeleteCenario,
   usePrevisoes, useAjustesCenario, useSaveAjuste, useRemoveAjuste,
@@ -32,6 +33,7 @@ export default function Simulator() {
   const [newDesc, setNewDesc] = useState('');
   const [editingCell, setEditingCell] = useState<{ id: string; field: 'valor' | 'data_vencimento' } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const selected = cenarios?.find(c => c.id === selectedId) ?? cenarios?.[0] ?? null;
   const activeId = selected?.id ?? null;
@@ -46,14 +48,27 @@ export default function Simulator() {
   const fluxo = useMemo(() => calcularFluxo(simuladas), [simuladas]);
   const metricas = useMemo(() => calcularMetricas(fluxo), [fluxo]);
 
-  // Compare scenario
   const simuladasCompare = useMemo(
     () => compareId ? mergePrevisoes(previsoes ?? [], ajustesCompare ?? []) : [],
     [previsoes, ajustesCompare, compareId]
   );
   const fluxoCompare = useMemo(() => compareId ? calcularFluxo(simuladasCompare) : [], [simuladasCompare, compareId]);
 
-  // Merge fluxo data for chart
+  // Group by etapa → serviço
+  const grouped = useMemo(() => {
+    const map: Record<string, { etapa: string; servicos: Record<string, { servico: string; itens: PrevisaoSimulada[] }> }> = {};
+    simuladas.forEach(p => {
+      const gid = p.grupo_id ?? '__none';
+      if (!map[gid]) map[gid] = { etapa: p.etapa_nome || 'Sem etapa', servicos: {} };
+      const sid = p.servico_id ?? '__none';
+      if (!map[gid].servicos[sid]) map[gid].servicos[sid] = { servico: p.servico_nome || 'Sem serviço', itens: [] };
+      map[gid].servicos[sid].itens.push(p);
+    });
+    return map;
+  }, [simuladas]);
+
+  const toggleGroup = (key: string) => setCollapsedGroups(p => ({ ...p, [key]: !p[key] }));
+
   const chartData = useMemo(() => {
     const map = new Map<string, { data: string; saldo: number; saldoCompare?: number }>();
     fluxo.forEach(f => map.set(f.data, { data: f.data, saldo: f.saldoAcumulado }));
@@ -191,8 +206,8 @@ export default function Simulator() {
       )}
 
       <div className="grid grid-cols-5 gap-4">
-        {/* Left: editable list */}
-        <div className="col-span-3 space-y-4">
+        {/* Left: editable grouped list */}
+        <div className="col-span-3 space-y-2">
           <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
             <div className="py-2 px-3 bg-muted/50 flex items-center gap-2">
               <SlidersHorizontal className="h-3.5 w-3.5 text-module-simulator" />
@@ -205,94 +220,121 @@ export default function Simulator() {
               <div className="p-4 space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
             ) : simuladas.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
-                Nenhuma previsão encontrada. Cadastre lançamentos com <code>e_previsao = true</code>.
+                Nenhuma previsão encontrada. Cadastre itens no Planejamento para simular.
               </div>
             ) : (
-              <div className="max-h-[400px] overflow-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
-                    <tr>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Fornecedor</th>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Dept.</th>
-                      <th className="text-right py-2 px-3 font-medium text-muted-foreground">Valor</th>
-                      <th className="text-left py-2 px-3 font-medium text-muted-foreground">Vencimento</th>
-                      <th className="text-center py-2 px-3 font-medium text-muted-foreground">Status</th>
-                      <th className="w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {simuladas.map(p => (
-                      <tr
-                        key={p.id}
-                        className={`border-t hover:bg-muted/30 transition-colors ${p.editado ? 'border-l-2 border-l-module-simulator' : ''}`}
+              <div className="max-h-[500px] overflow-auto">
+                {Object.entries(grouped).map(([gid, group]) => {
+                  const isOpen = !collapsedGroups[gid];
+                  const etapaTotal = Object.values(group.servicos).reduce(
+                    (s, sv) => s + sv.itens.reduce((ss, it) => ss + it.valor_simulado, 0), 0
+                  );
+
+                  return (
+                    <div key={gid} className="border-b last:border-b-0">
+                      {/* Etapa header */}
+                      <button
+                        onClick={() => toggleGroup(gid)}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/30 transition-colors text-left bg-muted/10"
                       >
-                        <td className="py-2 px-3 font-medium truncate max-w-[200px]">
-                          {p.fornecedor_razao ?? p.observacao ?? '—'}
-                        </td>
-                        <td className="py-2 px-3 text-muted-foreground text-xs">{p.departamento_limpo ?? p.departamento ?? '—'}</td>
+                        {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        <Layers className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-semibold flex-1">{group.etapa}</span>
+                        <span className="font-mono text-xs text-muted-foreground">{formatCurrency(etapaTotal)}</span>
+                      </button>
 
-                        {/* Valor cell */}
-                        <td className="py-2 px-3 text-right">
-                          {editingCell?.id === p.id && editingCell.field === 'valor' ? (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              onBlur={saveEdit}
-                              onKeyDown={e => e.key === 'Enter' && saveEdit()}
-                              className="h-7 w-28 ml-auto text-right font-mono"
-                              autoFocus
-                            />
-                          ) : (
-                            <span
-                              className={`font-mono tabular-nums cursor-pointer hover:underline ${p.editado && p.valor_simulado !== p.valor ? 'text-module-simulator font-bold' : ''}`}
-                              onClick={() => startEdit(p, 'valor')}
-                            >
-                              {formatCurrency(p.valor_simulado)}
+                      {isOpen && Object.entries(group.servicos).map(([sid, svc]) => (
+                        <div key={sid}>
+                          {/* Serviço sub-header */}
+                          <div className="px-6 py-1.5 bg-muted/5 flex items-center gap-2 border-t">
+                            <span className="text-[10px] font-medium text-muted-foreground flex-1">{svc.servico}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {formatCurrency(svc.itens.reduce((s, it) => s + it.valor_simulado, 0))}
                             </span>
-                          )}
-                        </td>
+                          </div>
 
-                        {/* Data cell */}
-                        <td className="py-2 px-3">
-                          {editingCell?.id === p.id && editingCell.field === 'data_vencimento' ? (
-                            <Input
-                              type="date"
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              onBlur={saveEdit}
-                              onKeyDown={e => e.key === 'Enter' && saveEdit()}
-                              className="h-7 w-36"
-                              autoFocus
-                            />
-                          ) : (
-                            <span
-                              className={`cursor-pointer hover:underline text-muted-foreground ${p.editado && p.vencimento_simulado !== p.data_vencimento ? 'text-module-simulator font-semibold' : ''}`}
-                              onClick={() => startEdit(p, 'data_vencimento')}
-                            >
-                              {p.vencimento_simulado ? formatDate(p.vencimento_simulado) : '—'}
-                            </span>
-                          )}
-                        </td>
+                          {/* Items table */}
+                          <table className="w-full text-xs">
+                            <tbody>
+                              {svc.itens.map(p => (
+                                <tr
+                                  key={p.id}
+                                  className={cn(
+                                    'border-t border-muted/20 hover:bg-muted/20 transition-colors',
+                                    p.editado && 'border-l-2 border-l-module-simulator'
+                                  )}
+                                >
+                                  <td className="py-1.5 pl-8 pr-2 font-medium truncate max-w-[180px]">{p.item_nome}</td>
 
-                        <td className="py-2 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${p.editado ? 'bg-module-simulator/10 text-module-simulator' : 'bg-muted text-muted-foreground'}`}>
-                            {p.editado ? 'Alterado' : 'Original'}
-                          </span>
-                        </td>
+                                  {/* Valor */}
+                                  <td className="py-1.5 px-2 text-right w-28">
+                                    {editingCell?.id === p.id && editingCell.field === 'valor' ? (
+                                      <Input
+                                        type="number" step="0.01" value={editValue}
+                                        onChange={e => setEditValue(e.target.value)}
+                                        onBlur={saveEdit}
+                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                        className="h-6 w-24 ml-auto text-right font-mono text-xs" autoFocus
+                                      />
+                                    ) : (
+                                      <span
+                                        className={cn(
+                                          'font-mono tabular-nums cursor-pointer hover:underline',
+                                          p.editado && p.valor_simulado !== p.valor && 'text-module-simulator font-bold'
+                                        )}
+                                        onClick={() => startEdit(p, 'valor')}
+                                      >
+                                        {formatCurrency(p.valor_simulado)}
+                                      </span>
+                                    )}
+                                  </td>
 
-                        <td className="py-2 px-3">
-                          {p.editado && (
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => resetAjuste(p)} title="Reverter">
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                                  {/* Vencimento */}
+                                  <td className="py-1.5 px-2 w-28">
+                                    {editingCell?.id === p.id && editingCell.field === 'data_vencimento' ? (
+                                      <Input
+                                        type="date" value={editValue}
+                                        onChange={e => setEditValue(e.target.value)}
+                                        onBlur={saveEdit}
+                                        onKeyDown={e => e.key === 'Enter' && saveEdit()}
+                                        className="h-6 w-28 text-xs" autoFocus
+                                      />
+                                    ) : (
+                                      <span
+                                        className={cn(
+                                          'cursor-pointer hover:underline text-muted-foreground',
+                                          p.editado && p.vencimento_simulado !== p.data_vencimento && 'text-module-simulator font-semibold'
+                                        )}
+                                        onClick={() => startEdit(p, 'data_vencimento')}
+                                      >
+                                        {p.vencimento_simulado ? formatDate(p.vencimento_simulado) : '—'}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Status */}
+                                  <td className="py-1.5 px-2 text-center w-20">
+                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${p.editado ? 'bg-module-simulator/10 text-module-simulator' : 'bg-muted text-muted-foreground'}`}>
+                                      {p.editado ? 'Alterado' : 'Original'}
+                                    </span>
+                                  </td>
+
+                                  <td className="py-1.5 px-1 w-8">
+                                    {p.editado && (
+                                      <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => resetAjuste(p)} title="Reverter">
+                                        <RotateCcw className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -321,20 +363,17 @@ export default function Simulator() {
                   <ReferenceLine y={0} stroke="hsl(var(--destructive))" strokeDasharray="4 4" />
                   <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatCurrency(Number(v))} />} />
                   <Area
-                    type="monotone"
-                    dataKey="saldo"
+                    type="monotone" dataKey="saldo"
                     stroke="hsl(var(--module-simulator))"
                     fill="hsl(var(--module-simulator) / 0.15)"
                     strokeWidth={2}
                   />
                   {compareId && (
                     <Area
-                      type="monotone"
-                      dataKey="saldoCompare"
+                      type="monotone" dataKey="saldoCompare"
                       stroke="hsl(var(--module-dashboard))"
                       fill="hsl(var(--module-dashboard) / 0.1)"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
+                      strokeWidth={2} strokeDasharray="5 5"
                     />
                   )}
                 </AreaChart>

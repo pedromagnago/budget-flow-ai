@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -9,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil, Search, Truck } from 'lucide-react';
+import { Save, Plus, Eye, EyeOff, Bell, UserPlus, Mail, Lock, ShieldCheck, Layers, Users, CreditCard, Trash2, Pencil, Search, Truck, Building2 } from 'lucide-react';
 import {
   useCompanySettings, useUpdateCompany,
   useCategorias, useUpdateCategoria, useCreateCategoria,
   useUserRoles, useInviteUser, useUpdateUserRole, useDeleteUser, useUpdateAuthUser,
 } from '@/hooks/useSettings';
 import { useFormasPagamento, useCreateFormaPagamento, useUpdateFormaPagamento, useDeleteFormaPagamento } from '@/hooks/useFormasPagamento';
+import { ContasTab } from '@/components/banking/ContasTab';
 import { useFornecedores, useCreateFornecedor, useUpdateFornecedor, useDeactivateFornecedor } from '@/hooks/useFornecedores';
 import { CATEGORIA_FORNECEDOR_LABELS } from '@/lib/constants';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
@@ -40,6 +45,18 @@ interface CompanyConfig {
 function getConfig(config: Json | null): CompanyConfig {
   if (!config || typeof config !== 'object' || Array.isArray(config)) return {};
   return config as unknown as CompanyConfig;
+}
+
+function SectionCard({ children, title, icon: Icon }: { children: React.ReactNode; title: string; icon?: React.ElementType }) {
+  return (
+    <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4 max-w-2xl">
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{title}</p>
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export default function SettingsPage() {
@@ -74,6 +91,39 @@ export default function SettingsPage() {
   const [fornForm, setFornForm] = useState({ razao_social: '', nome_fantasia: '', cnpj: '', email: '', telefone: '', categoria: '' as string, observacoes: '' });
   const EMPTY_FORN = { razao_social: '', nome_fantasia: '', cnpj: '', email: '', telefone: '', categoria: '' as string, observacoes: '' };
   const filteredForn = (fornecedores ?? []).filter(f => f.razao_social.toLowerCase().includes(fornSearch.toLowerCase()) || (f.cnpj ?? '').includes(fornSearch));
+
+  // ── New project state ──
+  const { user, companies, switchCompany } = useAuth();
+  const queryClient = useQueryClient();
+  const [newProjectDialog, setNewProjectDialog] = useState(false);
+  const [newProjectForm, setNewProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64 });
+  const [creatingProject, setCreatingProject] = useState(false);
+
+  const handleCreateProject = async () => {
+    if (!user || !newProjectForm.razao_social.trim()) return;
+    setCreatingProject(true);
+    try {
+      const { error } = await supabase.rpc('create_project' as never, {
+        _razao_social: newProjectForm.razao_social.trim(),
+        _nome_fantasia: newProjectForm.nome_fantasia.trim() || null,
+        _municipio: newProjectForm.municipio.trim() || null,
+        _estado: newProjectForm.estado.trim() || null,
+        _qtd_casas: newProjectForm.qtd_casas,
+      } as never);
+      if (error) throw error;
+
+      toast.success('Projeto criado! Trocando...');
+      setNewProjectDialog(false);
+      setNewProjectForm({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64 });
+
+      // Reload to pick up new company list
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Erro ao criar projeto');
+    } finally {
+      setCreatingProject(false);
+    }
+  };
 
   // ── Project form state ──
   const [projectForm, setProjectForm] = useState({ razao_social: '', nome_fantasia: '', municipio: '', estado: '', qtd_casas: 64, status: 'ativo' });
@@ -140,17 +190,8 @@ export default function SettingsPage() {
     updateCompany.mutate({ config: newConfig as unknown as Json });
   };
 
-  const SectionCard = ({ children, title, icon: Icon }: { children: React.ReactNode; title: string; icon?: React.ElementType }) => (
-    <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4 max-w-2xl">
-      <div className="flex items-center gap-2">
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{title}</p>
-      </div>
-      {children}
-    </div>
-  );
-
   if (isLoading) return <div className="space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full max-w-2xl" />)}</div>;
+
 
   return (
     <div className="space-y-6">
@@ -164,6 +205,7 @@ export default function SettingsPage() {
           <TabsTrigger value="alerts" className="text-xs">Alertas</TabsTrigger>
           <TabsTrigger value="pagamento" className="text-xs">Formas de Pagamento</TabsTrigger>
           <TabsTrigger value="fornecedores" className="text-xs">Fornecedores</TabsTrigger>
+          <TabsTrigger value="contas-bancarias" className="text-xs">Contas Bancárias</TabsTrigger>
           <TabsTrigger value="users" className="text-xs">Usuários</TabsTrigger>
         </TabsList>
 
@@ -216,6 +258,20 @@ export default function SettingsPage() {
             </div>
             <Button size="sm" onClick={saveProject} disabled={updateCompany.isPending}>
               <Save className="h-3.5 w-3.5 mr-2" /> Salvar
+            </Button>
+          </SectionCard>
+
+          <SectionCard title="Outros Projetos" icon={Building2}>
+            <p className="text-sm text-muted-foreground">Você tem acesso a <strong>{companies.length}</strong> projeto(s). Crie um novo para gerenciar outra obra.</p>
+            {companies.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {companies.map(c => (
+                  <Badge key={c.id} variant="outline" className="text-xs">{c.name || 'Sem nome'} — {c.role}</Badge>
+                ))}
+              </div>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setNewProjectDialog(true)}>
+              <Plus className="h-3.5 w-3.5 mr-2" /> Novo Projeto
             </Button>
           </SectionCard>
         </TabsContent>
@@ -460,6 +516,13 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
+        {/* ── Contas Bancárias ── */}
+        <TabsContent value="contas-bancarias">
+          <SectionCard title="Contas Bancárias" icon={CreditCard}>
+            <ContasTab />
+          </SectionCard>
+        </TabsContent>
+
         {/* ── Usuários ── */}
         <TabsContent value="users">
           <SectionCard title="Usuários e Papéis" icon={Users}>
@@ -687,63 +750,105 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Fornecedor Dialog */}
-            {fornDialog && (
-              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setFornDialog(false)}>
-                <div className="bg-card rounded-xl p-6 w-full max-w-lg shadow-xl space-y-4" onClick={e => e.stopPropagation()}>
-                  <h3 className="font-semibold">{editFornId ? 'Editar Fornecedor' : 'Novo Fornecedor'}</h3>
-                  <div className="grid gap-3">
-                    <div className="grid gap-1.5">
-                      <Label className="text-xs">Razão Social *</Label>
-                      <Input value={fornForm.razao_social} onChange={e => setFornForm(p => ({ ...p, razao_social: e.target.value }))} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-1.5">
-                        <Label className="text-xs">Nome Fantasia</Label>
-                        <Input value={fornForm.nome_fantasia} onChange={e => setFornForm(p => ({ ...p, nome_fantasia: e.target.value }))} />
-                      </div>
-                      <div className="grid gap-1.5">
-                        <Label className="text-xs">CNPJ</Label>
-                        <Input value={fornForm.cnpj} onChange={e => setFornForm(p => ({ ...p, cnpj: e.target.value }))} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-1.5">
-                        <Label className="text-xs">Email</Label>
-                        <Input value={fornForm.email} onChange={e => setFornForm(p => ({ ...p, email: e.target.value }))} />
-                      </div>
-                      <div className="grid gap-1.5">
-                        <Label className="text-xs">Telefone</Label>
-                        <Input value={fornForm.telefone} onChange={e => setFornForm(p => ({ ...p, telefone: e.target.value }))} />
-                      </div>
-                    </div>
-                    <div className="grid gap-1.5">
-                      <Label className="text-xs">Categoria</Label>
-                      <Select value={fornForm.categoria} onValueChange={v => setFornForm(p => ({ ...p, categoria: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(CATEGORIA_FORNECEDOR_LABELS).map(([k, label]) => (
-                            <SelectItem key={k} value={k}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setFornDialog(false)}>Cancelar</Button>
-                    <Button size="sm" disabled={!fornForm.razao_social.trim()} onClick={async () => {
-                      const payload = { razao_social: fornForm.razao_social.trim(), nome_fantasia: fornForm.nome_fantasia.trim() || undefined, cnpj: fornForm.cnpj.trim() || undefined, email: fornForm.email.trim() || undefined, telefone: fornForm.telefone.trim() || undefined, categoria: (fornForm.categoria || undefined) as any, observacoes: fornForm.observacoes.trim() || undefined };
-                      if (editFornId) await updateFornecedor.mutateAsync({ id: editFornId, ...payload });
-                      else await createFornecedor.mutateAsync(payload);
-                      setFornDialog(false);
-                    }}>{editFornId ? 'Salvar' : 'Cadastrar'}</Button>
-                  </div>
-                </div>
-              </div>
-            )}
           </SectionCard>
         </TabsContent>
       </Tabs>
+
+      {/* Fornecedor Dialog — rendered outside Tabs via Portal to prevent focus loss */}
+      <Dialog open={fornDialog} onOpenChange={setFornDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editFornId ? 'Editar Fornecedor' : 'Novo Fornecedor'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Razão Social *</Label>
+              <Input value={fornForm.razao_social} onChange={e => setFornForm(p => ({ ...p, razao_social: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Nome Fantasia</Label>
+                <Input value={fornForm.nome_fantasia} onChange={e => setFornForm(p => ({ ...p, nome_fantasia: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">CNPJ</Label>
+                <Input value={fornForm.cnpj} onChange={e => setFornForm(p => ({ ...p, cnpj: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Email</Label>
+                <Input value={fornForm.email} onChange={e => setFornForm(p => ({ ...p, email: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Telefone</Label>
+                <Input value={fornForm.telefone} onChange={e => setFornForm(p => ({ ...p, telefone: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Categoria</Label>
+              <Select value={fornForm.categoria} onValueChange={v => setFornForm(p => ({ ...p, categoria: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORIA_FORNECEDOR_LABELS).map(([k, label]) => (
+                    <SelectItem key={k} value={k}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFornDialog(false)}>Cancelar</Button>
+            <Button disabled={!fornForm.razao_social.trim()} onClick={async () => {
+              const payload = { razao_social: fornForm.razao_social.trim(), nome_fantasia: fornForm.nome_fantasia.trim() || undefined, cnpj: fornForm.cnpj.trim() || undefined, email: fornForm.email.trim() || undefined, telefone: fornForm.telefone.trim() || undefined, categoria: (fornForm.categoria || undefined) as any, observacoes: fornForm.observacoes.trim() || undefined };
+              if (editFornId) await updateFornecedor.mutateAsync({ id: editFornId, ...payload });
+              else await createFornecedor.mutateAsync(payload);
+              setFornDialog(false);
+            }}>{editFornId ? 'Salvar' : 'Cadastrar'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Novo Projeto Dialog — via Portal */}
+      <Dialog open={newProjectDialog} onOpenChange={setNewProjectDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Projeto</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Razão Social *</Label>
+              <Input value={newProjectForm.razao_social} onChange={e => setNewProjectForm(p => ({ ...p, razao_social: e.target.value }))} placeholder="Ex: Residencial Flores" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Nome Fantasia</Label>
+                <Input value={newProjectForm.nome_fantasia} onChange={e => setNewProjectForm(p => ({ ...p, nome_fantasia: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Qtd. Casas</Label>
+                <Input type="number" value={newProjectForm.qtd_casas} onChange={e => setNewProjectForm(p => ({ ...p, qtd_casas: parseInt(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Município</Label>
+                <Input value={newProjectForm.municipio} onChange={e => setNewProjectForm(p => ({ ...p, municipio: e.target.value }))} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-xs">Estado</Label>
+                <Input value={newProjectForm.estado} onChange={e => setNewProjectForm(p => ({ ...p, estado: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewProjectDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreateProject} disabled={!newProjectForm.razao_social.trim() || creatingProject}>
+              {creatingProject ? 'Criando...' : 'Criar Projeto'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

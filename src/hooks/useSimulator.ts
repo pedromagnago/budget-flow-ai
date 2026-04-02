@@ -3,13 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from './useCompany';
 import { useAuth } from './useAuth';
 import { STALE_TIMES } from '@/lib/constants';
+import { usePrevisoesPlanejamento, type PrevisaoProjetada } from './usePrevisoesPlanejamento';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type Cenario = Tables<'cenarios'>;
 export type CenarioAjuste = Tables<'cenario_ajustes'>;
-export type Lancamento = Tables<'lancamentos'>;
 
-export interface PrevisaoSimulada extends Lancamento {
+export interface PrevisaoSimulada {
+  id: string;
+  etapa_nome: string;
+  servico_nome: string;
+  item_nome: string;
+  valor: number;
+  data_vencimento: string | null;
+  fornecedor_razao: string | null;
+  departamento: string | null;
+  tipo: string;
+  grupo_id: string;
+  servico_id: string;
+  // Simulated
   ajuste?: CenarioAjuste;
   valor_simulado: number;
   vencimento_simulado: string | null;
@@ -73,25 +85,29 @@ export function useDeleteCenario() {
   });
 }
 
-// ── Previsões (lancamentos where e_previsao=true) ──
+// ── Previsões from planning hierarchy ──
 export function usePrevisoes() {
-  const { companyId } = useCompany();
-  return useQuery({
-    queryKey: ['previsoes', companyId],
-    enabled: !!companyId,
-    staleTime: STALE_TIMES.dashboard,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('lancamentos')
-        .select('*')
-        .eq('company_id', companyId!)
-        .eq('e_previsao', true)
-        .is('deleted_at', null)
-        .order('data_vencimento', { ascending: true });
-      if (error) throw error;
-      return data as Lancamento[];
-    },
-  });
+  const { previsoes, isLoading } = usePrevisoesPlanejamento();
+
+  // Transform PrevisaoProjetada[] → flat list compatible with simulator
+  const data = previsoes.map((p): PrevisaoSimulada => ({
+    id: p.id,
+    etapa_nome: p.etapa_nome,
+    servico_nome: p.servico_nome,
+    item_nome: p.item_nome,
+    valor: p.valor_total,
+    data_vencimento: p.data_vencimento_projetada,
+    fornecedor_razao: p.fornecedor_nome,
+    departamento: p.etapa_nome,
+    tipo: 'despesa',
+    grupo_id: p.grupo_id,
+    servico_id: p.servico_id,
+    valor_simulado: p.valor_total,
+    vencimento_simulado: p.data_vencimento_projetada,
+    editado: false,
+  }));
+
+  return { data, isLoading };
 }
 
 // ── Ajustes de um cenário ──
@@ -126,7 +142,6 @@ export function useSaveAjuste() {
       valor_novo: string;
       justificativa?: string;
     }) => {
-      // Upsert: delete existing for same ref + campo, then insert
       await supabase
         .from('cenario_ajustes')
         .delete()
@@ -138,7 +153,7 @@ export function useSaveAjuste() {
       const { error } = await supabase.from('cenario_ajustes').insert({
         ...input,
         company_id: companyId!,
-        referencia_tipo: 'lancamento',
+        referencia_tipo: 'orcamento_item',
       });
       if (error) throw error;
     },
@@ -158,7 +173,7 @@ export function useRemoveAjuste() {
 }
 
 // ── Merge previsões + ajustes ──
-export function mergePrevisoes(previsoes: Lancamento[], ajustes: CenarioAjuste[]): PrevisaoSimulada[] {
+export function mergePrevisoes(previsoes: PrevisaoSimulada[], ajustes: CenarioAjuste[]): PrevisaoSimulada[] {
   const ajusteMap = new Map<string, CenarioAjuste[]>();
   ajustes.forEach(a => {
     const list = ajusteMap.get(a.referencia_id ?? '') ?? [];

@@ -247,3 +247,76 @@ export interface TriggerResult {
   diasAdiantamento?: number;
   diferenca?: number;
 }
+
+// ── Planejamento Hierárquico (Etapa → Serviço → Item) ──
+
+export interface ItemPlanejamento {
+  id: string;
+  company_id: string;
+  grupo_id: string;
+  servico_id: string | null;
+  item: string;
+  apropriacao: string;
+  unidade: string | null;
+  quantidade_total: number | null;
+  custo_unitario: number | null;
+  valor_orcado: number;
+  valor_consumido: number;
+  valor_saldo: number;
+  fornecedor_id: string | null;
+  fornecedor: string | null;
+  forma_pagamento_id: string | null;
+  forma_pagamento: string | null;
+  dias_prazo_pagamento: number | null;
+  observacoes: string | null;
+}
+
+export interface ServicoComItens {
+  servico_id: string;
+  company_id: string;
+  grupo_id: string | null;
+  servico_nome: string;
+  codigo: string | null;
+  unidade: string | null;
+  quantidade: number | null;
+  preco_unitario: number | null;
+  servico_valor_original: number;
+  responsavel: string | null;
+  data_inicio_plan: string | null;
+  data_fim_plan: string | null;
+  data_inicio_real: string | null;
+  data_fim_real: string | null;
+  status: string | null;
+  ordem: number | null;
+  servico_fornecedor_id: string | null;
+  servico_forma_pagamento_id: string | null;
+  total_itens: number;
+  soma_itens_orcado: number;
+  soma_itens_consumido: number;
+  soma_itens_saldo: number;
+  itens: ItemPlanejamento[];
+}
+
+export interface EtapaHierarquica {
+  grupo_id: string;
+  company_id: string;
+  nome: string;
+  valor_total: number;
+  servicos: ServicoComItens[];
+  total_servicos: number;
+  soma_total_itens: number;
+}
+
+export interface FluxoProjetadoEntry {
+  mes: string;
+  valor: number;
+  itens: Array<{
+    item: string;
+    servico: string;
+    etapa: string;
+    valor: number;
+    fornecedor: string | null;
+    forma_pagamento: string | null;
+    data_projetada: string;
+  }>;
+}

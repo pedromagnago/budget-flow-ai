@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EtapasOrcamentoTab } from '@/components/planejamento/EtapasOrcamentoTab';
 import { VisaoGeralTab } from '@/components/planejamento/VisaoGeralTab';
-import { ServicosTab } from '@/components/planejamento/ServicosTab';
+import { FluxoProjetado } from '@/components/planejamento/FluxoProjetado';
 import { QuickActionBar } from '@/components/planejamento/QuickActionBar';
 
 export default function PlanejamentoPage() {
@@ -14,12 +14,12 @@ export default function PlanejamentoPage() {
       <Tabs defaultValue="etapas" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="etapas">Etapas e Orçamento</TabsTrigger>
-          <TabsTrigger value="servicos">Serviços</TabsTrigger>
+          <TabsTrigger value="fluxo">Fluxo Projetado</TabsTrigger>
           <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
         </TabsList>
 
         <TabsContent value="etapas"><EtapasOrcamentoTab /></TabsContent>
-        <TabsContent value="servicos"><ServicosTab /></TabsContent>
+        <TabsContent value="fluxo"><FluxoProjetado /></TabsContent>
         <TabsContent value="visao-geral"><VisaoGeralTab /></TabsContent>
       </Tabs>
     </div>

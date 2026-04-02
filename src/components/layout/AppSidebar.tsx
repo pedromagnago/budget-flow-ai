@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 import { useSidebarBadges } from '@/hooks/useSidebarBadges';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   HardHat,
@@ -17,11 +18,15 @@ import {
   FileBarChart,
   ClipboardCheck,
   X,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { UserRole } from '@/lib/constants';
+import { useState } from 'react';
 
 interface NavItem {
   title: string;
@@ -83,12 +88,24 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: AppSidebarProps) {
   const { pathname } = useLocation();
-  const { role, user, signOut } = useAuth();
+  const { role, user, signOut, companies, companyId, switchCompany } = useAuth();
   const { data: company } = useCompanyConfig();
   const badges = useSidebarBadges();
+  const queryClient = useQueryClient();
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const quinzena = company?.config?.quinzena_atual ?? 'Q1';
   const companyName = company?.nome_fantasia || company?.razao_social || 'Projeto';
+
+  const handleSwitchCompany = (targetId: string) => {
+    if (targetId === companyId) {
+      setPopoverOpen(false);
+      return;
+    }
+    switchCompany(targetId);
+    queryClient.invalidateQueries();
+    setPopoverOpen(false);
+  };
 
   const visibleGroups = NAV_GROUPS.map(group => ({
     ...group,
@@ -159,6 +176,53 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
     ));
   }
 
+  // Project switcher header
+  function renderProjectHeader(showLabels: boolean) {
+    const hasMultiple = companies.length > 1;
+
+    const header = (
+      <div className={cn('flex items-center gap-3 p-4 h-14', !showLabels && 'justify-center', hasMultiple && showLabels && 'cursor-pointer hover:bg-sidebar-accent/50 rounded-md transition-colors')}>  
+        <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
+          <Building2 className="h-4 w-4 text-sidebar-primary-foreground" />
+        </div>
+        {showLabels && (
+          <div className="overflow-hidden flex-1">
+            <p className="text-sm font-semibold truncate">{companyName}</p>
+            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">{quinzena}</p>
+          </div>
+        )}
+        {showLabels && hasMultiple && (
+          <ChevronsUpDown className="h-3.5 w-3.5 text-sidebar-foreground/40 shrink-0" />
+        )}
+      </div>
+    );
+
+    if (!hasMultiple || !showLabels) return header;
+
+    return (
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild>{header}</PopoverTrigger>
+        <PopoverContent side="right" align="start" className="w-56 p-1" sideOffset={8}>
+          <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Trocar Projeto</p>
+          {companies.map(c => (
+            <button
+              key={c.id}
+              onClick={() => handleSwitchCompany(c.id)}
+              className={cn(
+                'flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm text-left transition-colors',
+                c.id === companyId ? 'bg-accent font-medium' : 'hover:bg-accent/50'
+              )}
+            >
+              <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="flex-1 truncate">{c.name || 'Projeto sem nome'}</span>
+              {c.id === companyId && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   // Mobile: overlay drawer
   if (isMobile) {
     return (
@@ -175,17 +239,9 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
             open ? 'translate-x-0' : '-translate-x-full'
           )}
         >
-          <div className="flex items-center justify-between p-4 h-14">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-                <Building2 className="h-4 w-4 text-sidebar-primary-foreground" />
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-sm font-semibold truncate">{companyName}</p>
-                <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">{quinzena}</p>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/50" onClick={onClose}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">{renderProjectHeader(true)}</div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-sidebar-foreground/50 mr-2" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -223,17 +279,7 @@ export function AppSidebar({ collapsed, onToggle, isMobile, open, onClose }: App
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      <div className={cn('flex items-center gap-3 p-4 h-14', collapsed && 'justify-center')}>
-        <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-          <Building2 className="h-4 w-4 text-sidebar-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate">{companyName}</p>
-            <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">{quinzena}</p>
-          </div>
-        )}
-      </div>
+      {renderProjectHeader(!collapsed)}
 
       <Separator className="bg-sidebar-border" />
 

@@ -1,35 +1,46 @@
 import { useState, useMemo } from 'react';
-import { Check, X, FileText, Ruler, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Check, X, FileText, Ruler, Clock, CheckCircle, XCircle, AlertTriangle, Eye, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
+import { AprovacaoReviewDialog } from './AprovacaoReviewDialog';
+import { cn } from '@/lib/utils';
 
 type ApprovalItem = {
-  type: 'medicao' | 'documento';
+  type: 'lancamento' | 'documento';
   id: string;
+  lancamento_id?: string;
+  documento_id?: string;
   title: string;
   subtitle: string;
   etapa: string;
   valor: number;
   status: string;
+  tipoLanc: string;
   date: string;
+  nome_arquivo?: string;
+  storage_path?: string;
+  tipo_mime?: string;
+  observacao?: string;
+  fornecedor_razao?: string;
+  forma_pagamento?: string;
+  departamento?: string;
+  categoria?: string;
+  data_vencimento?: string;
 };
 
 export function AprovacoesTab() {
   const { companyId } = useCompany();
   const qc = useQueryClient();
-  const [filter, setFilter] = useState<'pendente' | 'aprovado' | 'reprovado' | 'todos'>('pendente');
-  const [rejectDialog, setRejectDialog] = useState<{ id: string; type: string } | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [filter, setFilter] = useState<'pendente' | 'aprovado' | 'rejeitado' | 'todos'>('pendente');
+  const [tipoFilter, setTipoFilter] = useState<'todos' | 'despesa' | 'receita'>('todos');
+  const [reviewItem, setReviewItem] = useState<ApprovalItem | null>(null);
 
   const { data: lancamentos, isLoading: loadingLanc } = useQuery({
     queryKey: ['aprovacoes-lancamentos', companyId],
@@ -37,7 +48,7 @@ export function AprovacoesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('lancamentos')
-        .select('id, observacao, valor, data_vencimento, situacao, e_previsao, orcamento_item_id, fornecedor_id, tipo')
+        .select('id, observacao, valor, data_vencimento, situacao, e_previsao, orcamento_item_id, fornecedor_id, tipo, status_aprovacao, fornecedor_razao, forma_pagamento, departamento, categoria')
         .eq('company_id', companyId!);
       if (error) throw error;
       return data ?? [];
@@ -50,8 +61,32 @@ export function AprovacoesTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('documentos')
-        .select('id, nome_arquivo, status, created_at')
+        .select('id, nome_arquivo, status, created_at, storage_path, tipo_mime')
         .eq('company_id', companyId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Join classificacoes_ia to documentos for lancamento_id
+  const { data: classificacoes } = useQuery({
+    queryKey: ['aprovacoes-classificacoes', companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classificacoes_ia' as never)
+        .select('documento_id, lancamento_id, fornecedor_extraido, valor_extraido, data_vencimento_ext, status_auditoria' as never)
+        .eq('company_id' as never, companyId! as never) as unknown as {
+          data: Array<{
+            documento_id: string;
+            lancamento_id: string | null;
+            fornecedor_extraido: string | null;
+            valor_extraido: number | null;
+            data_vencimento_ext: string | null;
+            status_auditoria: string;
+          }> | null;
+          error: Error | null;
+        };
       if (error) throw error;
       return data ?? [];
     },
@@ -87,96 +122,98 @@ export function AprovacoesTab() {
     return map;
   }, [items]);
 
+  const classMap = useMemo(() => {
+    const map: Record<string, typeof classificacoes extends Array<infer T> ? T : never> = {};
+    (classificacoes ?? []).forEach(c => { map[c.documento_id] = c; });
+    return map;
+  }, [classificacoes]);
+
   const approvalItems: ApprovalItem[] = useMemo(() => {
     const result: ApprovalItem[] = [];
 
     (lancamentos ?? []).forEach(l => {
       const grupoId = l.orcamento_item_id ? itemGrupoMap[l.orcamento_item_id] : '';
       const etapa = grupoId ? grupoMap[grupoId] ?? '—' : '—';
+      const status = l.status_aprovacao === 'aprovado' ? 'aprovado'
+        : l.status_aprovacao === 'rejeitado' ? 'rejeitado'
+        : 'pendente';
       result.push({
-        type: 'medicao',
+        type: 'lancamento',
         id: l.id,
+        lancamento_id: l.id,
         title: l.observacao ?? (l.tipo === 'despesa' ? 'Despesa' : 'Receita'),
-        subtitle: l.e_previsao ? 'Previsão do planejamento' : l.tipo === 'despesa' ? 'Despesa' : 'Receita',
+        subtitle: l.e_previsao ? 'Previsão' : l.tipo === 'despesa' ? 'Despesa' : 'Receita',
         etapa,
         valor: l.valor,
-        status: l.situacao === 'pago' ? 'aprovado' : l.situacao === 'cancelado' ? 'reprovado' : 'pendente',
+        status,
+        tipoLanc: l.tipo ?? 'despesa',
         date: l.data_vencimento,
+        observacao: l.observacao,
+        fornecedor_razao: l.fornecedor_razao,
+        forma_pagamento: l.forma_pagamento,
+        departamento: l.departamento,
+        categoria: l.categoria,
+        data_vencimento: l.data_vencimento,
       });
     });
 
     (documentos ?? []).forEach(d => {
+      const cls = classMap[d.id];
+      const auditStatus = cls?.status_auditoria;
+      const status = auditStatus === 'aprovado' || d.status === 'aprovado' ? 'aprovado'
+        : auditStatus === 'rejeitado' || d.status === 'rejeitado' ? 'rejeitado'
+        : 'pendente';
       result.push({
         type: 'documento',
         id: d.id,
+        documento_id: d.id,
+        lancamento_id: cls?.lancamento_id ?? undefined,
         title: d.nome_arquivo,
-        subtitle: 'Documento submetido',
+        subtitle: cls?.fornecedor_extraido ?? 'Documento submetido',
         etapa: '—',
-        valor: 0,
-        status: d.status === 'aprovado' ? 'aprovado' : d.status === 'rejeitado' ? 'reprovado' : 'pendente',
-        date: d.created_at ?? '',
+        valor: cls?.valor_extraido ?? 0,
+        status,
+        tipoLanc: 'despesa',
+        date: cls?.data_vencimento_ext ?? d.created_at ?? '',
+        nome_arquivo: d.nome_arquivo,
+        storage_path: d.storage_path,
+        tipo_mime: d.tipo_mime,
+        data_vencimento: cls?.data_vencimento_ext ?? undefined,
       });
     });
 
-    return result;
-  }, [lancamentos, documentos, grupoMap, itemGrupoMap]);
+    return result.sort((a, b) => {
+      if (a.status === 'pendente' && b.status !== 'pendente') return -1;
+      if (b.status === 'pendente' && a.status !== 'pendente') return 1;
+      return 0;
+    });
+  }, [lancamentos, documentos, grupoMap, itemGrupoMap, classMap]);
 
-  const filtered = filter === 'todos' ? approvalItems : approvalItems.filter(i => i.status === filter);
+  const filtered = useMemo(() => {
+    let list = filter === 'todos' ? approvalItems : approvalItems.filter(i => i.status === filter);
+    if (tipoFilter !== 'todos') list = list.filter(i => i.tipoLanc === tipoFilter);
+    return list;
+  }, [approvalItems, filter, tipoFilter]);
 
   const counts = useMemo(() => ({
     pendente: approvalItems.filter(i => i.status === 'pendente').length,
     aprovado: approvalItems.filter(i => i.status === 'aprovado').length,
-    reprovado: approvalItems.filter(i => i.status === 'reprovado').length,
+    rejeitado: approvalItems.filter(i => i.status === 'rejeitado').length,
   }), [approvalItems]);
-
-  const approveMut = useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: string }) => {
-      if (type === 'medicao') {
-        const { error } = await supabase.from('lancamentos').update({ status: 'aprovado' } as never).eq('id', id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('documentos').update({ status: 'aprovado' }).eq('id', id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['aprovacoes-lancamentos'] });
-      qc.invalidateQueries({ queryKey: ['aprovacoes-documentos'] });
-      toast.success('Item aprovado');
-    },
-  });
-
-  const rejectMut = useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: string }) => {
-      if (type === 'medicao') {
-        const { error } = await supabase.from('lancamentos').update({ status: 'cancelado' } as never).eq('id', id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('documentos').update({ status: 'rejeitado' }).eq('id', id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['aprovacoes-lancamentos'] });
-      qc.invalidateQueries({ queryKey: ['aprovacoes-documentos'] });
-      setRejectDialog(null);
-      setRejectReason('');
-      toast.success('Item reprovado');
-    },
-  });
 
   const isLoading = loadingLanc || loadingDocs;
 
   const statusIcon = (s: string) => {
     if (s === 'aprovado') return <CheckCircle className="h-4 w-4 text-green-500" />;
-    if (s === 'reprovado') return <XCircle className="h-4 w-4 text-destructive" />;
+    if (s === 'rejeitado') return <XCircle className="h-4 w-4 text-destructive" />;
     return <Clock className="h-4 w-4 text-yellow-500" />;
   };
 
   return (
     <div className="space-y-4">
+      {/* Status cards */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="cursor-pointer hover:ring-1 ring-primary" onClick={() => setFilter('pendente')}>
+        <Card className={cn('cursor-pointer hover:ring-1 ring-primary transition-all', filter === 'pendente' && 'ring-1')} onClick={() => setFilter('pendente')}>
           <CardContent className="pt-4 pb-3 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <div>
@@ -185,7 +222,7 @@ export function AprovacoesTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:ring-1 ring-primary" onClick={() => setFilter('aprovado')}>
+        <Card className={cn('cursor-pointer hover:ring-1 ring-primary transition-all', filter === 'aprovado' && 'ring-1')} onClick={() => setFilter('aprovado')}>
           <CardContent className="pt-4 pb-3 flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-500" />
             <div>
@@ -194,17 +231,35 @@ export function AprovacoesTab() {
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:ring-1 ring-primary" onClick={() => setFilter('reprovado')}>
+        <Card className={cn('cursor-pointer hover:ring-1 ring-primary transition-all', filter === 'rejeitado' && 'ring-1')} onClick={() => setFilter('rejeitado')}>
           <CardContent className="pt-4 pb-3 flex items-center gap-3">
             <XCircle className="h-5 w-5 text-destructive" />
             <div>
-              <p className="text-2xl font-bold">{counts.reprovado}</p>
-              <p className="text-xs text-muted-foreground">Reprovados</p>
+              <p className="text-2xl font-bold">{counts.rejeitado}</p>
+              <p className="text-xs text-muted-foreground">Rejeitados</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tipo filter */}
+      <div className="flex gap-2">
+        {(['todos', 'despesa', 'receita'] as const).map(t => (
+          <Button
+            key={t}
+            size="sm"
+            variant={tipoFilter === t ? 'default' : 'outline'}
+            className="h-7 text-xs gap-1.5"
+            onClick={() => setTipoFilter(t)}
+          >
+            {t === 'despesa' && <ArrowDownCircle className="h-3 w-3" />}
+            {t === 'receita' && <ArrowUpCircle className="h-3 w-3" />}
+            {t === 'todos' ? 'Todos' : t === 'despesa' ? 'CPA · A Pagar' : 'CRE · A Receber'}
+          </Button>
+        ))}
+      </div>
+
+      {/* List */}
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
       ) : filtered.length === 0 ? (
@@ -215,15 +270,27 @@ export function AprovacoesTab() {
       ) : (
         <div className="space-y-2">
           {filtered.map(item => (
-            <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+            <div
+              key={`${item.type}-${item.id}`}
+              className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer group"
+              onClick={() => setReviewItem(item)}
+            >
               <div className="flex-shrink-0">
-                {item.type === 'medicao' ? <Ruler className="h-5 w-5 text-blue-500" /> : <FileText className="h-5 w-5 text-orange-500" />}
+                {item.type === 'lancamento' ? <Ruler className="h-5 w-5 text-blue-500" /> : <FileText className="h-5 w-5 text-orange-500" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium truncate">{item.title}</p>
                   <Badge variant="outline" className="text-[10px] flex-shrink-0">
-                    {item.type === 'medicao' ? 'Lançamento' : 'Documento'}
+                    {item.type === 'lancamento' ? 'Lançamento' : 'Documento'}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn('text-[10px] flex-shrink-0',
+                      item.tipoLanc === 'despesa' ? 'border-destructive/40 text-destructive' : 'border-green-500/40 text-green-600'
+                    )}
+                  >
+                    {item.tipoLanc === 'despesa' ? 'CPA' : 'CRE'}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
@@ -237,14 +304,9 @@ export function AprovacoesTab() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 {statusIcon(item.status)}
                 {item.status === 'pendente' && (
-                  <>
-                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => approveMut.mutate({ id: item.id, type: item.type })}>
-                      <Check className="h-3 w-3" /> Aprovar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" onClick={() => setRejectDialog({ id: item.id, type: item.type })}>
-                      <X className="h-3 w-3" /> Reprovar
-                    </Button>
-                  </>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye className="h-3 w-3" /> Review
+                  </Button>
                 )}
               </div>
             </div>
@@ -252,19 +314,28 @@ export function AprovacoesTab() {
         </div>
       )}
 
-      <Dialog open={!!rejectDialog} onOpenChange={() => setRejectDialog(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Reprovar Item</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <Label>Motivo da reprovação</Label>
-            <Input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Descreva o motivo..." />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => rejectDialog && rejectMut.mutate(rejectDialog)}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Review Dialog */}
+      <AprovacaoReviewDialog
+        open={!!reviewItem}
+        onClose={() => setReviewItem(null)}
+        item={reviewItem ? {
+          id: reviewItem.id,
+          type: reviewItem.type,
+          lancamento_id: reviewItem.lancamento_id,
+          documento_id: reviewItem.documento_id,
+          nome_arquivo: reviewItem.nome_arquivo,
+          storage_path: reviewItem.storage_path,
+          tipo_mime: reviewItem.tipo_mime,
+          observacao: reviewItem.observacao,
+          valor: reviewItem.valor,
+          data_vencimento: reviewItem.data_vencimento,
+          tipo: reviewItem.tipoLanc,
+          fornecedor_razao: reviewItem.fornecedor_razao,
+          forma_pagamento: reviewItem.forma_pagamento,
+          departamento: reviewItem.departamento,
+          categoria: reviewItem.categoria,
+        } : null}
+      />
     </div>
   );
 }
